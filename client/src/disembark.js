@@ -297,6 +297,10 @@ function highlightPane(reviewers, highlightedBy, highlightCap) {
   });
 }
 
+function selfStarPane(loginData) {
+  return DIV(IMG({ src: 'star.png' }));
+}
+
 function ratingPane(label, init, setScoreCap) {
   function isValid(v) {
     var n = Number(v);
@@ -310,11 +314,13 @@ function ratingPane(label, init, setScoreCap) {
       response: 'plain'
     };
   }
-  var input = INPUT({ type: 'text', value: init });
+  var input = INPUT({ type: 'text', style: { width: '40px', fontSize: '15pt' },                      value: init, placeholder: 'N/A' });
   F.getWebServiceObjectE(
       F.$B(input).calmB(500).changes().filterE(isValid).mapE(mkReq))
   .mapE(function() { update.sendEvent(true); });
-  var elt = DIV("My Rating: ", input)
+  var elt = DIV({ className: 'vbox' }, 
+              DIV({ style: { textAlign: 'center' } }, 'Score'),
+              DIV(input));
   return elt;
 }
 
@@ -360,7 +366,8 @@ function dispCommentPane(loginData, reviewers, data, fields, comments) {
     return {
       info: infoPane(fields, dataById[arg.appId]),
       highlights: highlights,
-      rating: ratings,
+      rating: DIV({ className: 'hbox boxAlignCenter' },
+                  selfStarPane(loginData), ratings),
       commentDisp: commentDisp,
       commentCompose: commentCompose
     };

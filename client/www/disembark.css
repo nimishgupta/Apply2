@@ -15,6 +15,11 @@
 
 }
 
+.boxAlignCenter {
+  -webkit-box-align: center;
+  -moz-box-align: center;
+}
+
 .vbox  {
   display: -webkit-box;
   display: -moz-box;
@@ -61,6 +66,10 @@ display: -moz-box;
 
 input {
   border-radius: 5px;
+}
+
+input[type='text'], input[type='password'] {
+  border: 1px solid #ccc;
 }
 
 input[type='button'] {
