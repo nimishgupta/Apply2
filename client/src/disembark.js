@@ -252,49 +252,25 @@ function visibility(b) {
 }
 
 function highlightPane(reviewers, highlightedBy, highlightCap) {
-  
   function mkReq(revId) {
-    return function() {
       return {
         url: highlightCap,
         request: 'post',
         fields: { readerId: revId },
         response: 'plain'
       };
-    }
   };
-
   function revSelect(revId) {
-    return F.tagRec(['click'], function(click) {
-      var star =  F.getWebServiceObjectE(click.onceE().mapE(mkReq(revId)))
-                  .constantE(true);
-      star.mapE(function(v) {
-        update.sendEvent(true);
-      });
-
-      var hasStarred = star.startsWith(highlightedBy.indexOf(revId) !== -1);
-      var vis = hasStarred.liftB(visibility);
-
-      return DIV({ style: { cursor: 'pointer' } },
-        IMG({ src: 'star.png',
-              className: 'star', 
-              style: { visibility: vis } }),
-        reviewers[revId]);
-    });
+    var hasStar = highlightedBy.indexOf(revId) !== -1;
+    var txt = hasStar ? '★ ' + reviewers[revId] : reviewers[revId];
+    return OPTION({ value: revId }, txt);
   }
-
-  return F.tagRec([ 'mouseover', 'mouseout' ], function(over, out) {
-    var visible = F.mergeE(over.constantE(true), out.constantE(false))
-      .startsWith(false).liftB(function(b) {
-        return b ? 'block' : 'none';
-      });
-
-    return DIV({ className: 'vbox starringPanel' },
-      DIV(IMG({ className: 'star', src: 'star.png' }), 
-          'Star application for ...'),
-      DIV ({ className: 'vbox', style: { display: visible } },
-           Object.keys(reviewers).map(revSelect)));
-  });
+  var opts = Object.keys(reviewers).map(revSelect);
+  var elt = SELECT(opts);
+  var btn = INPUT({ type: 'button', value: '★'});
+  F.getWebServiceObjectE(F.clicksE(btn).snapshotE(F.$B(elt)).mapE(mkReq))
+    .mapE(function() { update.sendEvent(true); });
+  return DIV('Set a star for: ', elt, btn);
 }
 
 function selfStarPane(loginData, highlightCap, unhighlightCap, highlightedBy) {
