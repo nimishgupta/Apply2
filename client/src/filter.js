@@ -98,7 +98,7 @@ filter.And.prototype.makeFilter = function(inits) {
       return arr;
     }
   }).startsWith(init);
-  
+
   var elt = DIV({}, arr.liftB(function(arrV) {  
     var fn = function() { return Array.prototype.slice.call(arguments); };
     var la = [fn].concat(arrV.map(function(v) { 
@@ -116,7 +116,7 @@ filter.And.prototype.makeFilter = function(inits) {
   };
   var filter = arr.liftB(function(arr_v) {
     return F.liftB.apply(null, [fn_and].concat(arr_v.map(function(f) {
-      return f.disabled.liftB(function(disabledV) {
+      return f.disabled.switchB().liftB(function(disabledV) {
         if (disabledV) {
           return F.constantB(function() { return true; });
         }
@@ -268,9 +268,10 @@ filter.Picker.prototype.makeFilter = function(init) {
   });
 
   init = init ? init : negFilter;
-  var ser = subFilter.startsWith(init).index('ser').switchB().liftB(function(subSer) {
-    return { t: 'Picker', i: selB.valueNow(), a: subSer };
-  });
+  var ser = subFilter.startsWith(init).index('ser').switchB()
+    .liftB(function(subSer) {
+      return { t: 'Picker', i: selB.valueNow(), a: subSer };
+    });
   return {
     // TODO: glitch bug exposed if fn/elt/disabled are changed!
     fn: subFilter.mapE(function(v) { return v.fn; })
