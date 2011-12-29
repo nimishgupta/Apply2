@@ -208,7 +208,7 @@ function selectedApp(evt) {
 /**
  * @param {Object} dataById
  */
-function createLinks(dataById, comment) {
+function createLinks(loginData, dataById, comment) {
   var elts = [ ];
   var i = comment.indexOf('#');
   while (i !== -1) {
@@ -220,9 +220,21 @@ function createLinks(dataById, comment) {
     // To lookup the id, excludes both # and ;
     var maybeLink = comment.slice(i + 1, j); 
     if (dataById[maybeLink]) {
-      elts.push(A({ href: '/#' + escape(JSON.stringify({ app: maybeLink })),
-                    target: '_blank' },
-                  dataById[maybeLink].lastName));
+      var href = '/#' + escape(JSON.stringify({ app: maybeLink }));
+      // unsafeHref includes this user's capabilities.
+      var unsafeHref = 
+        '/#' + escape(JSON.stringify({ app: maybeLink,
+                                       loginData: loginData }));
+      // When anchor is copied, it does not have the user's caps. When anchor
+      // is clicked, it's invoked with the user's caps and then rewritten back
+      // to href.
+      var anchor = A({ href: href, target: '_blank' }, 
+                     dataById[maybeLink].lastName);;
+      anchor.addEventListener('click', function() {
+        anchor.href = unsafeHref;
+        window.setTimeout(function() { anchor.href = href; }, 0);
+      });
+      elts.push(anchor);
     }
     else {
       elts.push(comment.slice(i, j + 1)); // Include both # and ; 
@@ -233,12 +245,12 @@ function createLinks(dataById, comment) {
   return elts;
 }
 
-function dispComment(dataById) {
+function dispComment(loginData, dataById) {
   return function(comment) {
     return DIV({ className: 'comment' },
                DIV(comment.reviewerName),
                DIV(relativeDate(comment.timestamp)),
-               DIV(createLinks(dataById, comment.text)));
+               DIV(createLinks(loginData, dataById, comment.text)));
   }
 }
 
@@ -329,14 +341,14 @@ function infoPane(fields, val) {
  * arg is the response from fetchCap, which includes caps to post new comments
  * and highlight this application.
  */
-function dispCommentPane(reviewers, data, fields, comments) {
+function dispCommentPane(loginData, reviewers, data, fields, comments) {
   var dataById = dataMap(data);
   function fn(arg) {
     var compose = 
       TEXTAREA({ id: 'composeTextarea', 
                  rows: 5, className: 'fill', placeholder: 'Compose Message' });
     var post = INPUT({ className: 'fill', type: 'button', value: 'Send' });
-    var commentDisp = DIV(arg.comments.map(dispComment(dataById)));
+    var commentDisp = DIV(arg.comments.map(dispComment(loginData, dataById)));
     var commentCompose =
       DIV({className: 'hbox' }, 
         DIV({ className: 'flex1' }, DIV({ className: 'ctrl' }, compose)),
@@ -368,7 +380,7 @@ function dispCommentPane(reviewers, data, fields, comments) {
  * @param {F.EventStream} appId
  * @return {F.EventStream}
  */
-function displayComments(reviewers, fetchCap, appId, data, fields) {
+function displayComments(loginData, reviewers, fetchCap, appId, data, fields) {
   var comments = F.getWebServiceObjectE(appId.mapE(function(appIdV) {
     return { 
       url: fetchCap, 
@@ -378,7 +390,7 @@ function displayComments(reviewers, fetchCap, appId, data, fields) {
     };
   }));
 
-  return dispCommentPane(reviewers, data, fields, comments);
+  return dispCommentPane(loginData, reviewers, data, fields, comments);
 }
 
 function makeVis(field) {
@@ -398,7 +410,7 @@ function dataMap(data) {
  * @param {LoginResponse} loginData
  * @param {F.EventStream} data
  */
-function loadData(loginData, data) { 
+function loadData(urlArgs, loginData, data) { 
   /** @type {Array.<Cols.TextCol>} */
   var fields = [
     new Cols.IdCol('embarkId', 'Link', true),
@@ -432,20 +444,6 @@ function loadData(loginData, data) {
     [ new filter.And(filterCl), new filter.Or(filterCl),
       new filter.Not(filterCl) ]));
   
-  var urlArgs = { app: '' };
-  if (window.location.hash.length > 1) {
-    try {
-      urlArgs = JSON.parse(unescape(window.location.hash.slice(1)));
-    }
-    catch(_) {
-    }
-    if (typeof urlArgs !== 'object') {
-      urlArgs = { };
-    }
-    if (typeof urlArgs.app !== 'string') {
-      urlArgs.app = '';
-    }
-  }
   var tableFilter = urlArgs.filter 
     ? filter.deserialize(filt, -1, urlArgs.filter)
     : (new filter.And(filt)).makeFilter();
@@ -480,7 +478,7 @@ function loadData(loginData, data) {
       .filterE(function(v) { return v !== ''; });
 
     var detail  = 
-      displayComments(loginData.reviewers, loginData.fetchCommentsCap,
+      displayComments(loginData, loginData.reviewers, loginData.fetchCommentsCap,
            selected, data, fields);
     return { appTable: appTable, detail: detail, 
       selected: selected.startsWith(acc.selected.valueNow()) }
@@ -523,21 +521,47 @@ var update = F.receiverE();
 /**
  * @param {LoginResponse} loginData
  */
-function loggedIn(loginData) {
+function loggedIn(urlArgs, loginData) {
   var reqData = { url: loginData.appsCap, request: 'get', response: 'json' };
   var reqHL = { url: loginData.readerHighlightsCap, 
                 request: 'get', response: 'json' };
 
   var refresh = F.mergeE(F.oneE(true), update);
 
-  loadData(loginData, F.getWebServiceObjectE(refresh.constantE(reqData)));
+  loadData(urlArgs, loginData, 
+    F.getWebServiceObjectE(refresh.constantE(reqData)));
 }
 
-F.getWebServiceObjectE(loginClicks.mapE(mkLogin)).mapE(function(result) {
-  loggedIn(result);
-});
+(function() {
+  var urlArgs = { app: '' };
+  if (window.location.hash.length > 1) {
+    try {
+      urlArgs = JSON.parse(unescape(window.location.hash.slice(1)));
+    }
+    catch(_) {
+    }
+    if (typeof urlArgs !== 'object') {
+      urlArgs = { };
+    }
+    if (typeof urlArgs.app !== 'string') {
+      urlArgs.app = '';
+    }
+  }
+  window.location.hash = '';
 
-document.getElementById('username').focus();
+  if (urlArgs.loginData) {
+    var loginData = urlArgs.loginData;
+    delete urlArgs.loginData;
+    loggedIn(urlArgs, loginData);
+  }
+  else {
+    F.getWebServiceObjectE(loginClicks.mapE(mkLogin)).mapE(function(result) {
+      loggedIn(urlArgs, result);
+    });
+  }
+
+  document.getElementById('username').focus();
+})();
 
 function isFirefox() {
   return navigator.userAgent.match('Gecko') !== null;
