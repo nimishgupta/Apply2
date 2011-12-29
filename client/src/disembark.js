@@ -133,8 +133,8 @@ function headers(fields) {
     var toggle = F.tagRec(['click'], function(clickE) {
       return SPAN({ className: 'buttonLink' },
                  clickE.collectE(true, function(_, b) { return !b; })
-                       .mapE(function(b) { return b ? 'ꜛ' : 'ꜜ'; })
-                       .startsWith('ꜛ'));
+                       .mapE(function(b) { return b ? '▲' : '▼'; })
+                       .startsWith('△'));
     });
 
     return {
@@ -293,7 +293,10 @@ function infoPane(fields, val) {
       DIV({ className: 'cell' }, field.friendly),
       DIV({ className: 'cell' }, field.display(val)));
   }
-  return DIV({ className: 'vbox table' }, fields.map(row));
+  function notStar(field) {
+    return !(field instanceof Cols.StarCol);
+  }
+  return DIV({ className: 'vbox table' }, fields.filter(notStar).map(row));
 }
 
 /**
