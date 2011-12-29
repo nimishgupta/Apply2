@@ -404,18 +404,23 @@ function loadData(loginData, data) {
     [ new filter.And(filterCl), new filter.Or(filterCl),
       new filter.Not(filterCl) ]));
   
-  var tableFilter;
+  var urlArgs = { };
   if (window.location.hash.length > 1) {
-    tableFilter = 
-      filter.deserialize(filt, -1,
-           JSON.parse(unescape(window.location.hash.slice(1))));
+    try {
+      urlArgs = JSON.parse(unescape(window.location.hash.slice(1)));
+    }
+    catch(_) {
+    }
+    if (typeof urlArgs !== 'object') {
+      urlArgs = { };
+    }
   }
-  else {
-    tableFilter = (new filter.And(filt)).makeFilter();
-  }
+  var tableFilter = urlArgs.filter 
+    ? filter.deserialize(filt, -1, urlArgs.filter)
+    : (new filter.And(filt)).makeFilter();
   F.clicksE(document.getElementById('copyFilters'))
     .snapshotE(tableFilter.ser).mapE(function(ser) {
-    window.location.hash = escape(JSON.stringify(ser));
+    window.location.hash = escape(JSON.stringify({ filter: ser }));
     });
 
   F.clicksE(document.getElementById('showHideFilters'))
