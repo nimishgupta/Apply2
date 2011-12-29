@@ -3,9 +3,9 @@ package server
 import (
   "net"
   "http/fcgi"
-	"http"
-	"fmt"
-	"caps"
+  "http"
+  "fmt"
+  "caps"
   "log"
   "model"
   "io/ioutil"
@@ -92,7 +92,7 @@ func postCommentHandler(v string, w http.ResponseWriter, r *http.Request) {
   now, _, _ := os.Time()
 
   err = dept.NewComment(&model.Comment{arg.AppId, arg.ReviewerId,
-	  arg.ReviewerName, float64(now), string(buf)})
+    arg.ReviewerName, float64(now), string(buf)})
   if err != nil {
     panic(err)
   }
@@ -129,10 +129,10 @@ func fetchCommentsHandler(key string, w http.ResponseWriter, r *http.Request) {
   if err != nil { panic(err) }
   
   _ = util.JSONResponse(w, map[string]interface{} {
-		"appId": appId,
+    "appId": appId,
     "comments": comments,
     "post": capServer.Grant(postCommentKey, env),
-		"setScoreCap": capServer.Grant(setScoreKey, env),
+    "setScoreCap": capServer.Grant(setScoreKey, env),
     "highlightCap": capServer.Grant(setHighlightKey, env),
     "highlightedBy": highlightedBy,
   })
@@ -226,38 +226,38 @@ func loginHandler(w http.ResponseWriter, r *http.Request) {
 func setScoreHandler(key string, w http.ResponseWriter, r *http.Request) {
   var arg FetchCommentsEnv
   err := util.StringToJSON(key, &arg)
-	if err != nil {
+  if err != nil {
     log.Printf("FATAL ERROR decoding closure %v in setScoreHandler", key)
-		w.WriteHeader(500)
-		return
-	}
-	if r.Method != "POST" {
-	  log.Printf("%v SECURITY ERROR %v trying to %v to %v", r.RemoteAddr,
+    w.WriteHeader(500)
+    return
+  }
+  if r.Method != "POST" {
+    log.Printf("%v SECURITY ERROR %v trying to %v to %v", r.RemoteAddr,
       arg.ReviewerId, r.Method, r.URL)
     w.WriteHeader(http.StatusBadRequest)
     r.Close = true
-		return
-	}
-	var req struct {
-		Label string `json:"label"`
-	  Score int `json:"score"`
-	}
-	err = util.ReaderToJSON(r.Body, int(r.ContentLength), &req)
-	if err != nil && req.Label != "score" {
+    return
+  }
+  var req struct {
+    Label string `json:"label"`
+    Score int `json:"score"`
+  }
+  err = util.ReaderToJSON(r.Body, int(r.ContentLength), &req)
+  if err != nil && req.Label != "score" {
     w.WriteHeader(http.StatusBadRequest)
     r.Close = true
-		return
-	}
-	score := &model.Score{arg.AppId, arg.ReviewerId, req.Label, req.Score}
-	err = dept.SetScore(score)
-	if err != nil {
-		w.WriteHeader(500)
-		r.Close = true
-		log.Printf("%v ERROR SetScore(%v)", r.RemoteAddr, score)
-		return
-	}
-	w.WriteHeader(200)
-	return	
+    return
+  }
+  score := &model.Score{arg.AppId, arg.ReviewerId, req.Label, req.Score}
+  err = dept.SetScore(score)
+  if err != nil {
+    w.WriteHeader(500)
+    r.Close = true
+    log.Printf("%v ERROR SetScore(%v)", r.RemoteAddr, score)
+    return
+  }
+  w.WriteHeader(200)
+  return  
 }
 
 func Serve(deptPath string, deptName string) {
@@ -283,19 +283,19 @@ func Serve(deptPath string, deptName string) {
   if err != nil {
     panic(err)
   }
-	capServer = caps.NewCryptCapServer("/caps/", key, key)
+  capServer = caps.NewCryptCapServer("/caps/", key, key)
   capServer.HandleFunc(dataKey, dataHandler)
   capServer.HandleFunc(materialKey, materialHandler)
   capServer.HandleFunc(fetchCommentsKey, fetchCommentsHandler)
   capServer.HandleFunc(postCommentKey, postCommentHandler)
   capServer.HandleFunc(getHighlightsKey, getHighlightsHandler)
   capServer.HandleFunc(setHighlightKey, setHighlightHandler)
-	capServer.HandleFunc(setScoreKey, setScoreHandler)
+  capServer.HandleFunc(setScoreKey, setScoreHandler)
 
-	http.HandleFunc("/caps/", capServer.CapHandler())
+  http.HandleFunc("/caps/", capServer.CapHandler())
   http.HandleFunc("/login", loginHandler)
 
-	log.Printf("Starting server ...")
+  log.Printf("Starting server ...")
 //  http.ListenAndServe(":8080", nil)
   l, err := net.Listen("tcp", "127.0.0.1:9111")
   if err != nil {

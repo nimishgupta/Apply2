@@ -3,24 +3,24 @@ goog.provide('filter');
 
 filter.deserialize = function(rec, i, ser) {
   switch (ser.t) {
-		case 'And':
-			return (new filter.And(rec))
-				.makeFilter(ser.a.map(function(s) {
-				 	return filter.deserialize(rec, i, s);
-				}));
-		case 'Or':
-			return (new filter.Or(rec))
-				.makeFilter(ser.a.map(function(s) {
-				 	return filter.deserialize(rec, i, s);
-				}));
-		case 'Picker':
-			return (new filter.Picker(rec.filters_))
-				.makeFilter(filter.deserialize(rec, ser.i, ser.a));
-		case 'neg':
-			return false;
-		default:
-			return rec.filters_[i].makeFilter(ser.v);
-	}
+    case 'And':
+      return (new filter.And(rec))
+        .makeFilter(ser.a.map(function(s) {
+           return filter.deserialize(rec, i, s);
+        }));
+    case 'Or':
+      return (new filter.Or(rec))
+        .makeFilter(ser.a.map(function(s) {
+           return filter.deserialize(rec, i, s);
+        }));
+    case 'Picker':
+      return (new filter.Picker(rec.filters_))
+        .makeFilter(filter.deserialize(rec, ser.i, ser.a));
+    case 'neg':
+      return false;
+    default:
+      return rec.filters_[i].makeFilter(ser.v);
+  }
 };
 
 /**
@@ -38,7 +38,7 @@ filter.Nil.prototype.makeFilter = function() {
     fn: F.constantB(function(_) { return true; }),
     elt: DIV({ className: 'err' }, 'Error: Nil filter selected'),
     disabled: F.constantB(true),
-		ser: F.constantB({ t: 'nil' })
+    ser: F.constantB({ t: 'nil' })
   };
 };
 
@@ -62,7 +62,7 @@ filter.Not.prototype.makeFilter = function(init) {
     fn: sub.filter.liftB(function(f) { return function(x) { return !f(x); }; }),
     elt: DIV({ className: 'filterPanel' }, 'not', sub.elt),
     disabled: sub.disabled,
-		ser: sub.liftB(function(sub) { return { t: 'not', v: sub } })
+    ser: sub.liftB(function(sub) { return { t: 'not', v: sub } })
   };
 };
 
@@ -84,7 +84,7 @@ filter.And.prototype.makeFilter = function(inits) {
   var edit = F.receiverE();
   var this_ = this;
 
-	// TODO: init is now misnamed, should be empty
+  // TODO: init is now misnamed, should be empty
   var init = inits ? inits : [ this.subFilter_.makeFilter() ];
   var arr = edit.collectE(init, function(v, arr) {
     if (v === 'new') {
@@ -135,19 +135,19 @@ filter.And.prototype.makeFilter = function(inits) {
   disabled.changes().mapE(function(disabledV) {
     if (!disabledV) { edit.sendEvent('new'); } });
 
-	var serFn = F.constantB(function(var_args) {
+  var serFn = F.constantB(function(var_args) {
     return { t: 'And', a: F.mkArray(arguments) };
-	});
+  });
   var ser = arr.liftB(function(arrV) {
-		return serFn.ap.apply(serFn, arrV.map(function(v) { return v.ser; }));
-	}).switchB();
+    return serFn.ap.apply(serFn, arrV.map(function(v) { return v.ser; }));
+  }).switchB();
   
   return {
     fn: filter,
     elt: DIV({ className: 'filterPanel' }, 
              DIV(DIV('and'), DIV({ className: 'lbracket' }, elt))),
     disabled: disabled,
-		ser: ser
+    ser: ser
   };
 };
 
@@ -214,20 +214,20 @@ filter.Or.prototype.makeFilter = function(inits) {
 
   disabled.changes().mapE(function(disabledV) {
     if (!disabledV) { edit.sendEvent('new'); } });
-	
-	var serFn = F.constantB(function(var_args) {
+  
+  var serFn = F.constantB(function(var_args) {
     return { t: 'Or', a: F.mkArray(arguments) };
-	});
+  });
   var ser = arr.liftB(function(arrV) {
-		return serFn.ap.apply(serFn, arrV.map(function(v) { return v.ser; }));
-	}).switchB();
+    return serFn.ap.apply(serFn, arrV.map(function(v) { return v.ser; }));
+  }).switchB();
   
   return {
     fn: filter,
     elt: DIV({ className: 'filterPanel' }, 
              DIV(DIV('or'), DIV({ className: 'lbracket' }, elt))),
     disabled: disabled,
-		ser: ser
+    ser: ser
   };
 };
 
@@ -251,11 +251,11 @@ filter.Picker.prototype.makeFilter = function(init) {
   var selB = F.$B(sel);
   var selE = selB.changes();
 
-	var negFilter = {
+  var negFilter = {
         fn: F.constantB(function(_) { return true; }), // TODO: Use Nil?
         elt: sel,
         disabled: F.constantB(true),
-				ser: F.constantB({ t: 'neg' })
+        ser: F.constantB({ t: 'neg' })
       };
 
   var subFilter = selE.mapE(function(ix) { 
@@ -267,19 +267,19 @@ filter.Picker.prototype.makeFilter = function(init) {
     }
   });
 
-	init = init ? init : negFilter;
-	var ser = subFilter.startsWith(init).index('ser').switchB().liftB(function(subSer) {
-		return { t: 'Picker', i: selB.valueNow(), a: subSer };
-	});
+  init = init ? init : negFilter;
+  var ser = subFilter.startsWith(init).index('ser').switchB().liftB(function(subSer) {
+    return { t: 'Picker', i: selB.valueNow(), a: subSer };
+  });
   return {
-		// TODO: glitch bug exposed if fn/elt/disabled are changed!
+    // TODO: glitch bug exposed if fn/elt/disabled are changed!
     fn: subFilter.mapE(function(v) { return v.fn; })
                      .startsWith(init.fn)
                      .switchB(),
     elt: subFilter.mapE(function(v) { return v.elt; })
                   .startsWith(init.elt),
     disabled: selE.mapE(function(ix) { return ix === '-1'; })
-			        .startsWith(init.disabled),
-		ser: ser
+              .startsWith(init.disabled),
+    ser: ser
   };
 }

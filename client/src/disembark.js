@@ -235,11 +235,11 @@ function highlightPane(reviewers, highlightedBy, highlightCap) {
 
   function revSelect(revId) {
     return F.tagRec(['click'], function(click) {
-			var star =  F.getWebServiceObjectE(click.onceE().mapE(mkReq(revId)))
-			            .constantE(true);
-		  star.mapE(function(v) {
-				update.sendEvent(true);
-			});
+      var star =  F.getWebServiceObjectE(click.onceE().mapE(mkReq(revId)))
+                  .constantE(true);
+      star.mapE(function(v) {
+        update.sendEvent(true);
+      });
 
       var hasStarred = star.startsWith(highlightedBy.indexOf(revId) !== -1);
       var vis = hasStarred.liftB(visibility);
@@ -267,33 +267,33 @@ function highlightPane(reviewers, highlightedBy, highlightCap) {
 }
 
 function ratingPane(label, init, setScoreCap) {
-	function isValid(v) {
-		v = Number(v);
-		return v >= 0 && v <= 10;
-	}
-	function mkReq(v) {
-		return {
-			url: setScoreCap,
-			request: 'post',
-			fields: { label: label, score: Number(v) },
-			response: 'plain'
-		};
-	}
+  function isValid(v) {
+    v = Number(v);
+    return v >= 0 && v <= 10;
+  }
+  function mkReq(v) {
+    return {
+      url: setScoreCap,
+      request: 'post',
+      fields: { label: label, score: Number(v) },
+      response: 'plain'
+    };
+  }
   var input = INPUT({ type: 'text', value: init });
-	F.getWebServiceObjectE(
-			F.$B(input).calmB(500).changes().filterE(isValid).mapE(mkReq))
-	.mapE(function() { update.sendEvent(true); });
-	var elt = DIV("My Rating: ", input)
-	return elt;
+  F.getWebServiceObjectE(
+      F.$B(input).calmB(500).changes().filterE(isValid).mapE(mkReq))
+  .mapE(function() { update.sendEvent(true); });
+  var elt = DIV("My Rating: ", input)
+  return elt;
 }
 
 function infoPane(fields, val) {
-	function row(field) {
-		return DIV({ className: 'row' },
-		  DIV({ className: 'cell' }, field.friendly),
-			DIV({ className: 'cell' }, field.display(val)));
-	}
-	return DIV({ className: 'vbox table' }, fields.map(row));
+  function row(field) {
+    return DIV({ className: 'row' },
+      DIV({ className: 'cell' }, field.friendly),
+      DIV({ className: 'cell' }, field.display(val)));
+  }
+  return DIV({ className: 'vbox table' }, fields.map(row));
 }
 
 /**
@@ -320,14 +320,14 @@ function dispCommentPane(reviewers, data, fields) { return function(arg) {
   var initRating = data[arg.appId]['score_rating']
     ? data[arg.appId]['score_rating'][myRevId]
     : '';
-	var highlights =
-		highlightPane(reviewers, arg.highlightedBy, arg.highlightCap);
-	var ratings = ratingPane('rating', initRating, arg.setScoreCap);
+  var highlights =
+    highlightPane(reviewers, arg.highlightedBy, arg.highlightCap);
+  var ratings = ratingPane('rating', initRating, arg.setScoreCap);
   return {
-		info: infoPane(fields, data[arg.appId]),
+    info: infoPane(fields, data[arg.appId]),
     highlights: highlights,
     comments: pane,
-		rating: ratings
+    rating: ratings
   };
 }; }
 
@@ -359,9 +359,9 @@ function makeVis(field) {
 }
 
 function dataMap(data) {
-	var m = Object.create(null);
-	data.forEach(function(d) { m[d.embarkId] = d; });
-	return m;
+  var m = Object.create(null);
+  data.forEach(function(d) { m[d.embarkId] = d; });
+  return m;
 }
 
 /**
@@ -384,7 +384,7 @@ function loadData(loginData, data) {
     new Cols.NumCol('GPA', 'GPA', false),
     new Cols.NumCol('GREMath', 'GRE Math', false),
     new Cols.NumCol('GREVerbal', 'GRE Verbal', false),
-		new Cols.ScoreCol('score_rating', 'Ratings', loginData.reviewers, false)
+    new Cols.ScoreCol('score_rating', 'Ratings', loginData.reviewers, false)
   ];
   
   var vises = fields.map(function(f) {
@@ -405,15 +405,15 @@ function loadData(loginData, data) {
   if (window.location.hash.length > 1) {
     tableFilter = 
       filter.deserialize(filt, -1,
-				 	JSON.parse(unescape(window.location.hash.slice(1))));
+           JSON.parse(unescape(window.location.hash.slice(1))));
   }
   else {
     tableFilter = (new filter.And(filt)).makeFilter();
   }
   F.clicksE(document.getElementById('copyFilters'))
-		.snapshotE(tableFilter.ser).mapE(function(ser) {
-		window.location.hash = escape(JSON.stringify(ser));
-		});
+    .snapshotE(tableFilter.ser).mapE(function(ser) {
+    window.location.hash = escape(JSON.stringify(ser));
+    });
 
   F.clicksE(document.getElementById('showHideFilters'))
   .collectE(false, function(_, showHide) {
@@ -429,10 +429,10 @@ function loadData(loginData, data) {
   F.insertDomB(DIV({ id: 'filterPanel' }, tableFilter.elt), 'filterPanel');
   F.insertDomB(DIV({ id: 'visPanel' }, vises), 'vises');
   
-	document.getElementById('loginPanel').style.display = 'none';
+  document.getElementById('loginPanel').style.display = 'none';
   document.getElementById('mainPanel').style.display = '';
 
-	function processData(data, acc) {
+  function processData(data, acc) {
     var sortedData = F.constantB(data);
     var appTable = displayTable(sortedData, fields, tableFilter.fn.calmB(500));
     var selected = 
@@ -442,19 +442,19 @@ function loadData(loginData, data) {
 
     var detail  = 
       displayComments(loginData.reviewers, loginData.fetchCommentsCap,
-				 	selected, dataMap(data), fields);
-		return { appTable: appTable, detail: detail, 
+           selected, dataMap(data), fields);
+    return { appTable: appTable, detail: detail, 
       selected: selected.startsWith(acc.selected.valueNow()) }
-	}
+  }
 
-	var v = data.collectE({ selected: F.constantB('') }, processData);
+  var v = data.collectE({ selected: F.constantB('') }, processData);
   F.insertDomE(v.index('appTable'), 'applicantTable');
   // ID of the selected application
   //var selected =
     //selectedApp(F.$E(v.index('appTable').startsWith(null), "click"));
-	
+  
   var detail = v.index('detail').switchE();
-	F.insertDomE(detail.index('info'), 'infoPane');
+  F.insertDomE(detail.index('info'), 'infoPane');
   F.insertDomE(detail.index('comments'), 'commentsPane');
   F.insertDomE(detail.index('highlights'), 'highlightPane');
   F.insertDomE(detail.index('rating'), 'ratingPane');
@@ -488,7 +488,7 @@ function loggedIn(loginData) {
   var reqHL = { url: loginData.readerHighlightsCap, 
                 request: 'get', response: 'json' };
 
-	var refresh = F.mergeE(F.oneE(true), F.timerE(30000), update);
+  var refresh = F.mergeE(F.oneE(true), F.timerE(30000), update);
 
   loadData(loginData, F.getWebServiceObjectE(refresh.constantE(reqData)));
 }

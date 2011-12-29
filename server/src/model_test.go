@@ -1,10 +1,10 @@
 package model
 
 import (
-	"testing"
+  "testing"
   "io/ioutil"
   "json"
-	"os"
+  "os"
   "util"
   "fmt"
 )
@@ -31,69 +31,69 @@ func testDept(name string, t *testing.T) *Dept {
 
 func TestCreateDeleteDept(t *testing.T) {
   dept := testDept("unittestdb",t) 
-	dept.Delete()
+  dept.Delete()
 }
 
 func TestLoadDept(t *testing.T) {
-	dept := testDept("testloaddept", t)
+  dept := testDept("testloaddept", t)
   defer dept.Delete()
 
-	_, err2 := LoadDept(host, port, "testloaddept")
-	if err2 != nil { t.Fatalf("LoadDept failed: %q", err2) }
+  _, err2 := LoadDept(host, port, "testloaddept")
+  if err2 != nil { t.Fatalf("LoadDept failed: %q", err2) }
 }
 
 func TestLoadApplications(t *testing.T) {
-	var err os.Error
+  var err os.Error
 
-	var src []byte
+  var src []byte
   src, err = ioutil.ReadFile("data.json")
-	if (err != nil) { t.Fatalf("reading file failed: %v", err) }
+  if (err != nil) { t.Fatalf("reading file failed: %v", err) }
 
   var applications []Application
   err = json.Unmarshal(src, &applications)
-	if (err != nil) { t.Fatalf("parsing JSON failed: %v", err) }
+  if (err != nil) { t.Fatalf("parsing JSON failed: %v", err) }
 
-	var dept *Dept
+  var dept *Dept
 
 
-	dept, err = NewDept(host, port, "unittestdb")
-	if (err != nil) { t.Fatalf("NewDept", err) }
+  dept, err = NewDept(host, port, "unittestdb")
+  if (err != nil) { t.Fatalf("NewDept", err) }
   defer dept.Delete()
 
 
-	for _, app := range applications {
-		err = dept.NewApplication(app)
-		if (err != nil) { t.Fatalf("NewApplication", err) }
-	}
+  for _, app := range applications {
+    err = dept.NewApplication(app)
+    if (err != nil) { t.Fatalf("NewApplication", err) }
+  }
 
-	var fetched []map[string]interface{}
-	fetched, err = dept.Applications("0")
-	if (err != nil) { t.Fatalf("Applications", err) }
+  var fetched []map[string]interface{}
+  fetched, err = dept.Applications("0")
+  if (err != nil) { t.Fatalf("Applications", err) }
 
-	if (len(fetched) != len(applications)) {
-		t.Fatalf("stored %v, but fetched %v", len(applications), len(fetched))
-	}
-	
+  if (len(fetched) != len(applications)) {
+    t.Fatalf("stored %v, but fetched %v", len(applications), len(fetched))
+  }
+  
 }
 
 func TestNewReviewer(t *testing.T) {
-	dept := testDept("testnewreviewer", t)
-	defer dept.Delete()
+  dept := testDept("testnewreviewer", t)
+  defer dept.Delete()
 
   r1, err := dept.NewReviewer("potter", "Harry Potter", "redbull64")
-	if err != nil {
-		t.Fatalf("NewReviewer (1)", err)
-	}
+  if err != nil {
+    t.Fatalf("NewReviewer (1)", err)
+  }
 
   // No uniqueness on names
-	r2, err := dept.NewReviewer("potter2", "Harry Potter", "redbull65")
-	if err != nil {
-		t.Fatalf("NewReviewer (2)", err)
-	}
+  r2, err := dept.NewReviewer("potter2", "Harry Potter", "redbull65")
+  if err != nil {
+    t.Fatalf("NewReviewer (2)", err)
+  }
 
-	if r1.Id == r2.Id {
-		t.Fatalf("Expected different ids")
-	}
+  if r1.Id == r2.Id {
+    t.Fatalf("Expected different ids")
+  }
 }
 
 func TestGetReviewers(t *testing.T) {
@@ -113,7 +113,7 @@ func TestGetReviewers(t *testing.T) {
 }
 
 func TestAuthReviewer(t *testing.T) {
-	dept := testDept("testauthreviewer", t)
+  dept := testDept("testauthreviewer", t)
   rev1, err := dept.NewReviewer("goldilocks@wolf.edu", "Eaten", "redbull65")
   if err != nil {
     t.Fatalf("NewReviewer")
@@ -127,7 +127,7 @@ func TestAuthReviewer(t *testing.T) {
   if rev1.Id != rev2.Id {
     t.Fatalf("got different users")
   }
-	dept.Delete()
+  dept.Delete()
 }
 
 func TestComments1(t *testing.T) {
@@ -142,7 +142,7 @@ func TestComments1(t *testing.T) {
 
   _ = dept.NewApplication(app)
 
-	err := dept.NewComment(&Comment{app.EmbarkId, rev.Id, rev.Name, 0, "epic fail"})
+  err := dept.NewComment(&Comment{app.EmbarkId, rev.Id, rev.Name, 0, "epic fail"})
   if err != nil {
     t.Fatalf("NewComment: %v", err)
   }
@@ -220,19 +220,19 @@ func TestLoadComments(t *testing.T) {
   if err != nil {
     t.Fatalf("NewReviewer")
   }
-	
+  
   var src []byte
   src, err = ioutil.ReadFile("data.json")
-	if (err != nil) { t.Fatalf("reading file failed: %v", err) }
+  if (err != nil) { t.Fatalf("reading file failed: %v", err) }
 
   var applications []Application
   err = json.Unmarshal(src, &applications)
-	if (err != nil) { t.Fatalf("parsing JSON failed: %v", err) }
-	
+  if (err != nil) { t.Fatalf("parsing JSON failed: %v", err) }
+  
   for _, app := range applications {
-		err = dept.NewApplication(app)
-		if (err != nil) { t.Fatalf("NewApplication", err) }
-	}
+    err = dept.NewApplication(app)
+    if (err != nil) { t.Fatalf("NewApplication", err) }
+  }
 
   for j, app := range applications {
     for i := 0; i <  100; i = i + 1 {
@@ -267,30 +267,30 @@ func TestScores(t *testing.T) {
   dept := testDept("testscores", t)
   defer dept.Delete()
   dept.NewReviewer("myrev", "Claus", "redbull66")
-	dept.NewApplication(Application{ "myappid", nil, nil, nil, nil,
-	  nil, nil, nil, nil, nil, nil, nil })
+  dept.NewApplication(Application{ "myappid", nil, nil, nil, nil,
+    nil, nil, nil, nil, nil, nil, nil })
   err := dept.SetScore(&Score{"myappid","myrev","total",100})
-	if err != nil {
-		t.Fatalf("first SetScore failed: %v", err)
-	}
-	apps, _ := dept.Applications("0")
-	if len(apps) != 1 {
-		t.Fatalf("expected 1 application, got %v: %v", len(apps), apps)
-	}
-	scoreMap, found := apps[0]["score_total"].(map[string]float64)
-	if !found {
-		t.Fatalf("score map not found, record is %v", apps[0])
-	}
-	if scoreMap["myrev"] != 100 {
-		t.Fatalf("expected score to be 100, got score map %v", scoreMap)
-	}
+  if err != nil {
+    t.Fatalf("first SetScore failed: %v", err)
+  }
+  apps, _ := dept.Applications("0")
+  if len(apps) != 1 {
+    t.Fatalf("expected 1 application, got %v: %v", len(apps), apps)
+  }
+  scoreMap, found := apps[0]["score_total"].(map[string]float64)
+  if !found {
+    t.Fatalf("score map not found, record is %v", apps[0])
+  }
+  if scoreMap["myrev"] != 100 {
+    t.Fatalf("expected score to be 100, got score map %v", scoreMap)
+  }
 
   err = dept.SetScore(&Score{"myappid","myrev","total",50})
-	if err != nil {
-		t.Fatalf("second SetScore failed: %v", err)
-	}
-	apps, _ = dept.Applications("0")
-	if apps[0]["score_total"].(map[string]float64)["myrev"] != 50 {
-		t.Fatalf("expected score to be 50, got apps %v", apps)
-	}
+  if err != nil {
+    t.Fatalf("second SetScore failed: %v", err)
+  }
+  apps, _ = dept.Applications("0")
+  if apps[0]["score_total"].(map[string]float64)["myrev"] != 50 {
+    t.Fatalf("expected score to be 50, got apps %v", apps)
+  }
 }

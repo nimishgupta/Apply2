@@ -11,7 +11,7 @@ goog.require('goog.string');
 Cols.TextCol = function (label, friendly, initVis) {
   this.label_ = label;
   this.friendly = friendly;
-	this.initVis = initVis;
+  this.initVis = initVis;
 }
 
 /**
@@ -21,14 +21,14 @@ Cols.TextCol = function (label, friendly, initVis) {
 Cols.TextCol.prototype.makeFilter = function(init) {
   var elt = INPUT({ type: 'text', placeholder: this.friendly, value: init });
   var label = this.label_;
-	var text = F.$B(elt);
+  var text = F.$B(elt);
   var fn = text.liftB(function(search) {
     return function(obj) {
       if (search === '') { return true; }
       else { return obj[label].indexOf(search) !== -1; }
     };
   });
-	var ser = text.liftB(function(t) { return { t: 'Text', v: t } });
+  var ser = text.liftB(function(t) { return { t: 'Text', v: t } });
   return { fn: fn, elt: elt, ser: ser, disabled: F.constantB(false) };
 };
 
@@ -68,7 +68,7 @@ Cols.EnumCol = function(label, friendly, initVis) {
   this.label_ = label;
   this.friendly = friendly;
   this.elems_ = Object.create(null);
-	this.initVis = initVis;
+  this.initVis = initVis;
 }
 goog.inherits(Cols.EnumCol, Cols.TextCol);
 
@@ -76,7 +76,7 @@ goog.inherits(Cols.EnumCol, Cols.TextCol);
  * @return {Node}
  */
 Cols.EnumCol.prototype.display = function(obj) {
-	this.elems_[obj[this.label_]] = true;
+  this.elems_[obj[this.label_]] = true;
   var val = obj[this.label_];
   if (typeof val === 'string') {
     if (goog.string.isEmpty(val)) {
@@ -94,15 +94,15 @@ Cols.EnumCol.prototype.display = function(obj) {
 Cols.EnumCol.prototype.makeFilter = function(init) {
   var label = this.label_;
   var opts = Object.keys(this.elems_).map(function(s) { 
-		if (init === s) {
-		  return OPTION({ value: s, selected: 'selected' }, s);
-		}
-		else {
-		  return OPTION({ value: s }, s);
-		}	
-	});
+    if (init === s) {
+      return OPTION({ value: s, selected: 'selected' }, s);
+    }
+    else {
+      return OPTION({ value: s }, s);
+    }  
+  });
   var select = SELECT(opts);
-	var sel = F.$B(select);
+  var sel = F.$B(select);
   var fn = sel.liftB(function(selection) {
     return function(obj) { 
       return obj[label] === selection;
@@ -110,11 +110,11 @@ Cols.EnumCol.prototype.makeFilter = function(init) {
   });
   var elt = DIV(this.friendly, select);
   return { 
-		fn: fn, 
-	  elt: elt,
-		disabled: F.constantB(false),
-		ser:  sel.liftB(function(selV) { return { t: 'Enum', v: selV }; })
-	};
+    fn: fn, 
+    elt: elt,
+    disabled: F.constantB(false),
+    ser:  sel.liftB(function(selV) { return { t: 'Enum', v: selV }; })
+  };
 };
 
 /**
@@ -127,15 +127,15 @@ Cols.SetCol = function(label, friendly, initVis) {
   this.label_ = label;
   this.friendly = friendly;
   this.elems_ = Object.create(null);
-	this.initVis = initVis;
+  this.initVis = initVis;
 }
 goog.inherits(Cols.SetCol, Cols.TextCol);
 
 Cols.SetCol.prototype.display = function(val) {
-	var this_ = this;
-	val[this.label_].forEach(function(v) {
+  var this_ = this;
+  val[this.label_].forEach(function(v) {
     this_.elems_[v] = true;
-	});
+  });
   return DIV({ className: 'set' }, 
       DIV(val[this.label_].map(function(v) {
         return DIV(String(v));
@@ -145,15 +145,15 @@ Cols.SetCol.prototype.display = function(val) {
 Cols.SetCol.prototype.makeFilter = function(init) {
   var label = this.label_;
   var opts = Object.keys(this.elems_).map(function(s) {
-		if (init === s) {
-		  return OPTION({ value: s, selected: 'selected' }, s);
-		}
-		else {
-		  return OPTION({ value: s }, s);
-		}	
-	});
+    if (init === s) {
+      return OPTION({ value: s, selected: 'selected' }, s);
+    }
+    else {
+      return OPTION({ value: s }, s);
+    }  
+  });
   var select = SELECT(opts);
-	var sel = F.$B(select);
+  var sel = F.$B(select);
   var fn = sel.liftB(function(selection) {
     return function(obj) { 
       return obj[label].indexOf(selection) !== -1;
@@ -161,13 +161,13 @@ Cols.SetCol.prototype.makeFilter = function(init) {
   });
   var elt = DIV(this.friendly, select);
   return { fn: fn, elt: elt,
-		disabled: F.constantB(false),
-		ser:  sel.liftB(function(selV) { return { t: 'Enum', v: selV }; })
-	};
+    disabled: F.constantB(false),
+    ser:  sel.liftB(function(selV) { return { t: 'Enum', v: selV }; })
+  };
 };
 
 Cols.SetCol.prototype.compare = function(o1, o2) {
-	// TODO: fixme
+  // TODO: fixme
   throw 'cannot compare SetCol';
 };
 
@@ -182,7 +182,7 @@ Cols.SetCol.prototype.compare = function(o1, o2) {
 Cols.NumCol = function(label, friendly, initVis) {
   this.label_ = label;
   this.friendly = friendly;
-	this.initVis = initVis;
+  this.initVis = initVis;
 }
 goog.inherits(Cols.NumCol, Cols.TextCol);
 
@@ -194,11 +194,11 @@ Cols.NumCol.prototype.makeFilter = function(init) {
   var label = this.label_;
 
   var min = INPUT({ type: 'text', placeholder: 'min',
-                    value: init ? init.min : ''	});
+                    value: init ? init.min : ''  });
   var max = INPUT({ type: 'text', placeholder: 'max',
-                    value: init ? init.max : ''	});
-	var minB = F.$B(min);
-	var maxB = F.$B(max);
+                    value: init ? init.max : ''  });
+  var minB = F.$B(min);
+  var maxB = F.$B(max);
   var fn = F.liftB(function(minV, maxV) {
     minV = parseFloat(minV);
     maxV = parseFloat(maxV);
@@ -208,16 +208,16 @@ Cols.NumCol.prototype.makeFilter = function(init) {
       return passesMin && passesMax;
     };
   }, minB, maxB);
-	var ser = F.liftB(function(minV, maxV) {
-		return { t: 'Num', v: { min: minV, max: maxV } };
-	}, minB, maxB);
+  var ser = F.liftB(function(minV, maxV) {
+    return { t: 'Num', v: { min: minV, max: maxV } };
+  }, minB, maxB);
   var elt = DIV(this.friendly, ': [', min, ', ', max, ']');
   return { 
-		fn: fn, 
-		elt: elt,
+    fn: fn, 
+    elt: elt,
     disabled: F.constantB(false),
-		ser: ser
-	};
+    ser: ser
+  };
 };
 
 Cols.NumCol.prototype.display = function(obj) {
@@ -246,7 +246,7 @@ Cols.MatsCol = function(label, friendly, materialsCap, initVis) {
   this.label_ = label;
   this.friendly = friendly;
   this.materialsCap_ = materialsCap;
-	this.initVis = initVis;
+  this.initVis = initVis;
 }
 goog.inherits(Cols.MatsCol, Cols.TextCol);
 
@@ -269,8 +269,8 @@ Cols.MatsCol.prototype.makeFilter = function() {
   return { 
     fn: F.constantB(function() { return true; }), 
     elt: DIV("Cannot filter on materials"),
-		disabled: F.constantB(true),
-		ser: { t: 'Mats' }
+    disabled: F.constantB(true),
+    ser: { t: 'Mats' }
   };
 };
 
@@ -285,7 +285,7 @@ Cols.MatsCol.prototype.makeFilter = function() {
 Cols.StarCol = function(label, friendly, initVis) {
   this.label_ = label;
   this.friendly = friendly;
-	this.initVis = initVis;
+  this.initVis = initVis;
 }
 goog.inherits(Cols.StarCol, Cols.TextCol);
 
@@ -296,7 +296,7 @@ goog.inherits(Cols.StarCol, Cols.TextCol);
 Cols.StarCol.prototype.makeFilter = function(init) {
   var this_ = this;
   var input = INPUT({ type: 'checkbox', 
-		                  checked: init === undefined ? true : init });
+                      checked: init === undefined ? true : init });
   var elt = SPAN(input, this.friendly);
   var checked = F.$B(input);
   var fn = checked.liftB(function(sel) {
@@ -306,7 +306,7 @@ Cols.StarCol.prototype.makeFilter = function(init) {
   });
 
   return { fn: fn, elt: elt, disabled: F.constantB(false),
-		ser: checked.liftB(function(v) { return { t: 'Star', v: v } }) };
+    ser: checked.liftB(function(v) { return { t: 'Star', v: v } }) };
 };
 
 Cols.StarCol.prototype.compare = function(o1, o2) {
@@ -332,25 +332,25 @@ Cols.StarCol.prototype.display = function(val) {
  */
 Cols.ScoreCol = function(label, friendly, reviewers, initVis) {
   this.label_ = label;
-	this.friendly = friendly;
-	this.reviewers_ = reviewers;
-	this.initVis = initVis;
+  this.friendly = friendly;
+  this.reviewers_ = reviewers;
+  this.initVis = initVis;
 }
 goog.inherits(Cols.ScoreCol, Cols.TextCol);
 
 Cols.ScoreCol.prototype.display = function(val) {
-	var this_ = this;
+  var this_ = this;
   return DIV({ className: 'set' },
-			Object.keys(this.reviewers_).map(function(revId) {
-				var dict = val[this_.label_];
-				if (!dict) {
-					return DIV();
-				}
-				var score = dict[revId];
-				if (score === undefined) {
-					return DIV();
-				}
-		    return DIV(this_.reviewers_[revId] + ": " + score);
-	    }));
+      Object.keys(this.reviewers_).map(function(revId) {
+        var dict = val[this_.label_];
+        if (!dict) {
+          return DIV();
+        }
+        var score = dict[revId];
+        if (score === undefined) {
+          return DIV();
+        }
+        return DIV(this_.reviewers_[revId] + ": " + score);
+      }));
 }
 

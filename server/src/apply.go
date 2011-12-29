@@ -5,9 +5,9 @@ import (
   "os"
   "crypto/rand"
   "io/ioutil"
-	"model"
-	"json"
-	"server"
+  "model"
+  "json"
+  "server"
   "sample"
 )
 
@@ -28,13 +28,13 @@ func keygen(file string) {
 }
 
 func deleteDept(deptName string) {
-	dept, err := model.LoadDept("localhost", "5984", deptName)
-	if err != nil {
-		panic(fmt.Sprintf("department does not exist %v", err))
-	}
+  dept, err := model.LoadDept("localhost", "5984", deptName)
+  if err != nil {
+    panic(fmt.Sprintf("department does not exist %v", err))
+  }
 
   dept.Delete()
-	return
+  return
 }
 
 func main() {
@@ -51,24 +51,24 @@ func main() {
     sample.LoadRandomComments(dept)
   case "-keygen":
     keygen(os.Args[2])
-	case "-delete-dept":
+  case "-delete-dept":
     deleteDept(os.Args[2])
-	case "-dept":
-		dept, err := model.NewDept("localhost", "5984", os.Args[2])
-		if (err != nil) { panic(err) }
-		dept.NewReviewer(model.ReviewerId("arjun"), "Arjun Guha", "redbull64")
-	case "-load":
-		src, err := ioutil.ReadFile(os.Args[2])
-	  if (err != nil) { panic(err) }
+  case "-dept":
+    dept, err := model.NewDept("localhost", "5984", os.Args[2])
+    if (err != nil) { panic(err) }
+    dept.NewReviewer(model.ReviewerId("arjun"), "Arjun Guha", "redbull64")
+  case "-load":
+    src, err := ioutil.ReadFile(os.Args[2])
+    if (err != nil) { panic(err) }
     var applications []model.Application
     err = json.Unmarshal(src, &applications)
-	  if (err != nil) { panic(err) }
-		dept, err := model.LoadDept("localhost", "5984", os.Args[3])
-	  if (err != nil) { panic(err) }
-	  for _, app := range applications {
-	  	err = dept.NewApplication(app)
-			if (err != nil) { panic(err) }
-	  }
+    if (err != nil) { panic(err) }
+    dept, err := model.LoadDept("localhost", "5984", os.Args[3])
+    if (err != nil) { panic(err) }
+    for _, app := range applications {
+      err = dept.NewApplication(app)
+      if (err != nil) { panic(err) }
+    }
   case "-serve":
     server.Serve(os.Args[2], os.Args[3])
   default:

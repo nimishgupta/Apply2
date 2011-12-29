@@ -2,13 +2,13 @@ package util
 
 import (
   "crypto/sha256"
-	"strings"
-	"io"
+  "strings"
+  "io"
   "os"
-	"http"
+  "http"
   "json"
-	"strconv"
-	"fmt"
+  "strconv"
+  "fmt"
 )
 
 type JSObj map[string](interface { })
@@ -29,36 +29,36 @@ func StringToBytes(str string) []byte {
 
 func JSONToString(jsonVal interface { }) (string, os.Error) {
   buf, err := json.Marshal(jsonVal)
-	if err != nil {
-		return "", err
-	}
-	return string(buf), err
+  if err != nil {
+    return "", err
+  }
+  return string(buf), err
 }
 
 func ReaderToJSON(reader io.Reader, length int, out interface { }) os.Error {
   buf := make([]byte, length)
-	n, err := io.ReadFull(reader, buf)
-	if err != nil {
-		return err
-	}
-	if n != length {
-		return os.NewError(fmt.Sprintf("ReaderToJSON: expected %v bytes, received %v",
-		                               length, n))
+  n, err := io.ReadFull(reader, buf)
+  if err != nil {
+    return err
   }
-	return json.Unmarshal(buf, out)
+  if n != length {
+    return os.NewError(fmt.Sprintf("ReaderToJSON: expected %v bytes, received %v",
+                                   length, n))
+  }
+  return json.Unmarshal(buf, out)
 }
 
 func StringToJSON(str string, out interface { }) os.Error {
-	reader := strings.NewReader(str)
-	m := reader.Len()
-	buf := make([]byte, m)
-	n, err := io.ReadFull(reader, buf)
-	if err != nil {
-		return err
-	}
-	if n != m {
-		return err
-	}
+  reader := strings.NewReader(str)
+  m := reader.Len()
+  buf := make([]byte, m)
+  n, err := io.ReadFull(reader, buf)
+  if err != nil {
+    return err
+  }
+  if n != m {
+    return err
+  }
   return json.Unmarshal(buf, out)
 }
 
@@ -98,10 +98,10 @@ func JSONResponse(w http.ResponseWriter, resp interface { }) os.Error {
     return err
   }
   
-	w.Header().Add("Content-type", "text/plain;charset=UTF-8")
+  w.Header().Add("Content-type", "text/plain;charset=UTF-8")
 
-	// Content-Length must be set before the call to w.Write.
-	w.Header().Add("Content-Length", strconv.Itoa(len(bytes)))
+  // Content-Length must be set before the call to w.Write.
+  w.Header().Add("Content-Length", strconv.Itoa(len(bytes)))
 
   _, err = w.Write(bytes)
   if (err != nil) {

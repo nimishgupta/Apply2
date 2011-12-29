@@ -49,7 +49,7 @@ func randTime() float64 {
 } 
 
 func LoadRandomComments(dept *model.Dept) {
-	apps, err := dept.Applications("0")
+  apps, err := dept.Applications("0")
   if err != nil {
     panic(fmt.Sprintf("Applications failed, err=%v", err))
   }

@@ -4,10 +4,10 @@ package caps
 import (
   "os"
   "crypto/aes"
-	"crypto/cipher"
+  "crypto/cipher"
   "encoding/base64"
-	"fmt"
-	"http"
+  "fmt"
+  "http"
   "log"
   "json"
   "bytes"
@@ -42,12 +42,12 @@ type capData struct {
 
 
 func NewCryptCapServer(basePath string, key []byte, iv []byte) CapServer {
-	ciph, err := aes.NewCipher(key)
-	if (err != nil) {
-		panic(err)
-	}
+  ciph, err := aes.NewCipher(key)
+  if (err != nil) {
+    panic(err)
+  }
 
-	return &cryptCapServer{ ciph, iv, make(map[string]HandlerFunc, 10), basePath }
+  return &cryptCapServer{ ciph, iv, make(map[string]HandlerFunc, 10), basePath }
 }
 
 func (self *cryptCapServer) HandleFunc(key string, handler HandlerFunc) {
@@ -74,7 +74,7 @@ func (self *cryptCapServer) Grant(key string, value string) string {
 }
 
 func (self *cryptCapServer) CapHandler() http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
+  return func(w http.ResponseWriter, r *http.Request) {
     defer func() {
       log.Printf("%v END url=%v method=%v", r.RemoteAddr, r.RawURL, r.Method);
     }()
@@ -91,7 +91,7 @@ func (self *cryptCapServer) CapHandler() http.HandlerFunc {
       return
     }
 
-	  cipher.NewCBCDecrypter(self.ciph, self.iv).CryptBlocks(buf, buf)
+    cipher.NewCBCDecrypter(self.ciph, self.iv).CryptBlocks(buf, buf)
     var kv capData
     err = json.Unmarshal(buf, &kv)
 
@@ -113,5 +113,5 @@ func (self *cryptCapServer) CapHandler() http.HandlerFunc {
 
     log.Printf("%v INVOKE key=%v value=%v", r.RemoteAddr, kv.Key, kv.Value)
     handler(kv.Value, w, r)
-	}
+  }
 }
