@@ -297,8 +297,27 @@ function highlightPane(reviewers, highlightedBy, highlightCap) {
   });
 }
 
-function selfStarPane(loginData) {
-  return DIV(IMG({ src: 'star.png' }));
+function selfStarPane(loginData, highlightCap, unhighlightCap, highlightedBy) {
+  function mkReq(b) {
+      return {
+        url: b ? highlightCap : unhighlightCap,
+        request: 'post',
+        fields: b ? { readerId: loginData.revId } : { },
+        response: 'plain'
+      };
+  };
+  var init = highlightedBy.indexOf(loginData.revId) !== -1;
+  var initSrc = init ? 'star.png' : 'unstar.png';
+  return F.tagRec(['click'], function(clicks) {
+    var src = 
+      F.getWebServiceObjectE(clicks.collectE(init, function(_, acc) { 
+        return !acc; }).mapE(mkReq))
+      .collectE(initSrc, function(_, acc) {
+        return acc === 'star.png' ? 'unstar.png' : 'star.png' });
+    src.mapE(function() { update.sendEvent(true); });
+    return DIV(IMG({ src: src.startsWith(initSrc) }));
+  });
+
 }
 
 function ratingPane(label, init, setScoreCap) {
@@ -367,7 +386,8 @@ function dispCommentPane(loginData, reviewers, data, fields, comments) {
       info: infoPane(fields, dataById[arg.appId]),
       highlights: highlights,
       rating: DIV({ className: 'hbox boxAlignCenter' },
-                  selfStarPane(loginData), ratings),
+                  selfStarPane(loginData, arg.highlightCap, 
+                    arg.unhighlightCap, arg.highlightedBy), ratings),
       commentDisp: commentDisp,
       commentCompose: commentCompose
     };
