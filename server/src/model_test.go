@@ -183,8 +183,8 @@ func TestHighlighting(t *testing.T) {
     t.Fatalf("expected 0, got %v", len(lst))
   }
 
-  hl := Highlight{"1", rev2.Id, rev1.Id, "Writer", 900}
-  err = d.SetHighlight(&hl)
+  hl := &Highlight{"1", rev2.Id, rev1.Id, "Writer", 900}
+  err = d.SetHighlight(hl)
   if err != nil {
     t.Fatalf("SetHighlight error: %v", err)
   }
@@ -209,6 +209,11 @@ func TestHighlighting(t *testing.T) {
   }
   if lst[0] != string(rev2.Id) {
     t.Fatalf("expected highlight by rev2, got %v", lst[0])
+  }
+
+  err = d.DelHighlight(hl)
+  if err != nil {
+    t.Fatalf("DelHighlight error: %v", err)
   }
 }
 

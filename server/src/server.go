@@ -21,6 +21,7 @@ const materialKey = "material"
 const fetchCommentsKey = "fetchComments"
 const postCommentKey = "postComment"
 const setHighlightKey = "setHighlight"
+const delHighlightKey = "delHighlight"
 const setScoreKey = "setScore"
 
 var capServer caps.CapServer
@@ -133,6 +134,7 @@ func fetchCommentsHandler(key string, w http.ResponseWriter, r *http.Request) {
     "post": capServer.Grant(postCommentKey, env),
     "setScoreCap": capServer.Grant(setScoreKey, env),
     "highlightCap": capServer.Grant(setHighlightKey, env),
+    "unhighlightCap": capServer.Grant(delHighlightKey, env),
     "highlightedBy": highlightedBy,
   })
 
@@ -182,6 +184,34 @@ func setHighlightHandler(v string, w http.ResponseWriter, r *http.Request) {
   w.WriteHeader(200)
 }
 
+func delHighlightHandler(key string, w http.ResponseWriter, r *http.Request) {
+  var arg FetchCommentsEnv
+  err := util.StringToJSON(key, &arg)
+  if err != nil {
+    log.Printf("FATAL ERROR decoding closure %v in setScoreHandler", key)
+    w.WriteHeader(500)
+    return
+  }
+  if r.Method != "POST" {
+    log.Printf("%v SECURITY ERROR %v trying to %v to %v", r.RemoteAddr,
+      arg.ReviewerId, r.Method, r.URL)
+    w.WriteHeader(http.StatusBadRequest)
+    r.Close = true
+    return
+  }
+  now, _, _ := os.Time()
+  hl := &model.Highlight{arg.AppId, arg.ReviewerId, arg.ReviewerId,             
+    arg.ReviewerName, float64(now)}
+  err = dept.DelHighlight(hl)
+  if err != nil {
+    w.WriteHeader(http.StatusBadRequest)
+    r.Close = true
+    log.Printf("%v ERROR DelHighlight(%v): %v", r.RemoteAddr, hl, err)
+    return
+  }
+  w.WriteHeader(200)
+}
+
 // Authenticates a login request and returns capabilities to initial data.
 func loginHandler(w http.ResponseWriter, r *http.Request) {
   if r.Method != "POST" {
@@ -209,6 +239,7 @@ func loginHandler(w http.ResponseWriter, r *http.Request) {
   }
 
   err = util.JSONResponse(w, map[string]interface{} {
+    "revId": cred.Username,
     "friendlyName": rev.Name, 
     "appsCap": capServer.Grant(dataKey, cred.Username),
     "materialsCap": capServer.Grant(materialKey, cred.Username),
@@ -287,6 +318,7 @@ func Serve(deptPath string, deptName string) {
   capServer.HandleFunc(fetchCommentsKey, fetchCommentsHandler)
   capServer.HandleFunc(postCommentKey, postCommentHandler)
   capServer.HandleFunc(setHighlightKey, setHighlightHandler)
+  capServer.HandleFunc(delHighlightKey, delHighlightHandler)
   capServer.HandleFunc(setScoreKey, setScoreHandler)
 
   http.HandleFunc("/caps/", capServer.CapHandler())

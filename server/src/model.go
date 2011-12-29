@@ -304,9 +304,23 @@ func (self *Dept) LoadComments(appId string) ([]Comment, os.Error) {
   return ret, err;
 }
 
-func (self *Dept) SetHighlight(highlight *Highlight) os.Error {
-  _, _, err := self.highlightsDB.Insert(highlight)
+func (self *Dept) SetHighlight(hl *Highlight) os.Error {
+  // XXX: relies on the component ids being non-empty.
+  _id := fmt.Sprintf("%s-%s-%s", hl.ApplicationId, 
+    string(hl.ReaderId), string(hl.WriterId))
+  _, _, err := self.highlightsDB.InsertWith(hl, _id)
   return err
+}
+
+func (self *Dept) DelHighlight(hl *Highlight) os.Error {
+  _id := fmt.Sprintf("%s-%s-%s", hl.ApplicationId, 
+    string(hl.ReaderId), string(hl.WriterId))
+  var val interface{}
+  _rev, err := self.highlightsDB.Retrieve(_id, &val)
+  if err != nil {
+    return err
+  }
+  return self.highlightsDB.Delete(_id, _rev)
 }
 
 func query(d *db.Database, view string, key string) ([]map[string]interface{}, 
