@@ -116,7 +116,7 @@ filter.And.prototype.makeFilter = function(inits) {
   };
   var filter = arr.liftB(function(arr_v) {
     return F.liftB.apply(null, [fn_and].concat(arr_v.map(function(f) {
-      return f.disabled.switchB().liftB(function(disabledV) {
+      return f.disabled.liftB(function(disabledV) {
         if (disabledV) {
           return F.constantB(function() { return true; });
         }
@@ -280,7 +280,7 @@ filter.Picker.prototype.makeFilter = function(init) {
     elt: subFilter.mapE(function(v) { return v.elt; })
                   .startsWith(init.elt),
     disabled: selE.mapE(function(ix) { return ix === '-1'; })
-              .startsWith(init.disabled),
+              .startsWith(init.disabled.valueNow()),
     ser: ser
   };
 }
