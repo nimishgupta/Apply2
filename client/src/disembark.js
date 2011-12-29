@@ -5,13 +5,6 @@ goog.require('util');
 goog.require('filter');
 
 var console;
-/**
- *
- * Stanford JavaScript Crypto Library
- *
- * @type {{ codec: { base64: { fromBits: Function } }, hash: { sha256: { hash : Function } } } }
- */
-var sjcl;
 
 /**
  * @typedef {{ appsCap: string, 
@@ -514,7 +507,7 @@ function mkLogin() {
     response: 'json', 
     fields: {
       username: user.value,
-      password: sjcl.codec.base64.fromBits(sjcl.hash.sha256.hash(pass.value))
+      password: pass.value
     }
   };
 }

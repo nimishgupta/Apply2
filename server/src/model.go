@@ -258,7 +258,7 @@ func (self *Dept) NewReviewer(id ReviewerId, name string, pw string) (*Reviewer,
   return ret, nil
 }
 
-func (self *Dept) AuthReviewer(id ReviewerId, pwHash []byte) (*Reviewer, os.Error) {
+func (self *Dept) AuthReviewer(id ReviewerId, pw string) (*Reviewer, os.Error) {
   var rev Reviewer
   _, err := self.reviewerDB.Retrieve(string(id), &rev)
   if err != nil {
@@ -266,9 +266,8 @@ func (self *Dept) AuthReviewer(id ReviewerId, pwHash []byte) (*Reviewer, os.Erro
     return nil, err
   }
 
-  if (bytes.Equal(rev.PasswordHash, pwHash) == false) {
-    log.Printf("AuthReviewer(%v, %v) - invalid pwHash, expected %v", id, 
-      string(pwHash), string(rev.PasswordHash))
+  if (bytes.Equal(rev.PasswordHash, util.HashString(pw)) == false) {
+    log.Printf("AuthReviewer(%v, _) - incorrect password", id);
     return nil, os.NewError("invalid password")
   }
 

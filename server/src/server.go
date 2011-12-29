@@ -191,7 +191,7 @@ func loginHandler(w http.ResponseWriter, r *http.Request) {
   }
   var cred struct {
     Username string `json:"username"`
-    Password []byte `json:"password"`
+    Password string `json:"password"`
   }
   err := util.JSONBody(r, &cred)
   if (err != nil) {

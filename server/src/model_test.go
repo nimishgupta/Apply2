@@ -5,7 +5,6 @@ import (
   "io/ioutil"
   "json"
   "os"
-  "util"
   "fmt"
 )
 
@@ -119,7 +118,7 @@ func TestAuthReviewer(t *testing.T) {
     t.Fatalf("NewReviewer")
   }
 
-  rev2, err := dept.AuthReviewer("goldilocks@wolf.edu", util.HashString("redbull65"))
+  rev2, err := dept.AuthReviewer("goldilocks@wolf.edu", "redbull65")
   if err != nil {
     t.Fatalf("AuthReviewer")
   }
