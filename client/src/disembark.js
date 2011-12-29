@@ -299,38 +299,37 @@ function infoPane(fields, val) {
 /**
  * arg is the response from fetchCap, which includes caps to post new comments
  * and highlight this application.
- *
- * @return {function(FetchCapResponse):Node}
  */
-function dispCommentPane(reviewers, data, fields) { return function(arg) {
-
-  var compose = 
-    TEXTAREA({ rows: 5, className: 'fill', placeholder: 'Compose Message' });
-  var post = INPUT({ className: 'fill', type: 'button', value: 'Send' });
-  var pane = DIV({ className: 'vbox flex1', id: 'commentsPane' }, 
-    DIV({ className: 'flex1 scroll' }, arg.comments.map(dispComment)),
-    DIV({className: 'hbox' }, 
-      DIV({ className: 'flex1' }, DIV({ className: 'ctrl' }, compose)),
-      DIV(DIV({ className: 'ctrl' }, post))));
-  F.getWebServiceObjectE(F.clicksE(post).mapE(function() {
-    return { url: arg.post, request: 'rawPost', body: compose.value,
-      response: 'plain' };
-  }));
-
-  var initRating = data[arg.appId]['score_rating']
-    ? data[arg.appId]['score_rating'][myRevId]
-    : '';
-  var highlights =
-    highlightPane(reviewers, arg.highlightedBy, arg.highlightCap);
-  var ratings = ratingPane('rating', initRating, arg.setScoreCap);
-  return {
-    info: infoPane(fields, data[arg.appId]),
-    highlights: highlights,
-    comments: pane,
-    rating: ratings
-  };
-}; }
-
+function dispCommentPane(reviewers, data, fields, comments) {
+  function fn(arg) {
+    var compose = 
+      TEXTAREA({ rows: 5, className: 'fill', placeholder: 'Compose Message' });
+    var post = INPUT({ className: 'fill', type: 'button', value: 'Send' });
+    var commentDisp = DIV(arg.comments.map(dispComment));
+    var commentCompose =
+      DIV({className: 'hbox' }, 
+        DIV({ className: 'flex1' }, DIV({ className: 'ctrl' }, compose)),
+        DIV(DIV({ className: 'ctrl' }, post)));
+    F.getWebServiceObjectE(F.clicksE(post).mapE(function() {
+      return { url: arg.post, request: 'rawPost', body: compose.value,
+        response: 'plain' };
+    }));
+    var initRating = data[arg.appId]['score_rating']
+      ? data[arg.appId]['score_rating'][myRevId]
+      : '';
+    var highlights =
+      highlightPane(reviewers, arg.highlightedBy, arg.highlightCap);
+    var ratings = ratingPane('rating', initRating, arg.setScoreCap);
+    return {
+      info: infoPane(fields, data[arg.appId]),
+      highlights: highlights,
+      rating: ratings,
+      commentDisp: commentDisp,
+      commentCompose: commentCompose
+    };
+  }
+  return comments.mapE(fn);
+}
 
 /**
  * @param {Reviewers} reviewers
@@ -348,7 +347,7 @@ function displayComments(reviewers, fetchCap, appId, data, fields) {
     };
   }));
 
-  return comments.mapE(dispCommentPane(reviewers, data, fields));
+  return dispCommentPane(reviewers, data, fields, comments);
 }
 
 function makeVis(field) {
@@ -455,7 +454,8 @@ function loadData(loginData, data) {
   
   var detail = v.index('detail').switchE();
   F.insertDomE(detail.index('info'), 'infoPane');
-  F.insertDomE(detail.index('comments'), 'commentsPane');
+  F.insertDomE(detail.index('commentDisp'), 'commentDisp');
+  F.insertDomE(detail.index('commentCompose'), 'commentCompose');
   F.insertDomE(detail.index('highlights'), 'highlightPane');
   F.insertDomE(detail.index('rating'), 'ratingPane');
 };
@@ -488,7 +488,7 @@ function loggedIn(loginData) {
   var reqHL = { url: loginData.readerHighlightsCap, 
                 request: 'get', response: 'json' };
 
-  var refresh = F.mergeE(F.oneE(true), F.timerE(30000), update);
+  var refresh = F.mergeE(F.oneE(true), F.timerE(15000), update);
 
   loadData(loginData, F.getWebServiceObjectE(refresh.constantE(reqData)));
 }
