@@ -76,10 +76,10 @@ func (self *cryptCapServer) Grant(key string, value string) string {
 func (self *cryptCapServer) CapHandler() http.HandlerFunc {
   return func(w http.ResponseWriter, r *http.Request) {
     defer func() {
-      log.Printf("%v END url=%v method=%v", r.RemoteAddr, r.RawURL, r.Method);
+      log.Printf("%v END url=%v method=%v", r.RemoteAddr, r.RawURL, r.Method)
     }()
     
-    log.Printf("%v BEGIN url=%v method=%v", r.RemoteAddr, r.RawURL, r.Method);
+    log.Printf("%v BEGIN url=%v method=%v", r.RemoteAddr, r.RawURL, r.Method)
 
     base64Text := r.URL.Path[len(self.basePath):]
     buf, err := base64.URLEncoding.DecodeString(base64Text)

@@ -321,8 +321,8 @@ func Serve(deptPath string, deptName string) {
   capServer.HandleFunc(delHighlightKey, delHighlightHandler)
   capServer.HandleFunc(setScoreKey, setScoreHandler)
 
-  http.HandleFunc("/caps/", capServer.CapHandler())
-  http.HandleFunc("/login", loginHandler)
+  http.HandleFunc("/caps/", util.ProtectHandler(capServer.CapHandler()))
+  http.HandleFunc("/login", util.ProtectHandler(loginHandler))
 
   log.Printf("Starting server ...")
 //  http.ListenAndServe(":8080", nil)

@@ -9,6 +9,7 @@ import (
   "json"
   "strconv"
   "fmt"
+  "log"
 )
 
 type JSObj map[string](interface { })
@@ -109,4 +110,16 @@ func JSONResponse(w http.ResponseWriter, resp interface { }) os.Error {
   }
 
   return nil
+}
+
+func ProtectHandler(handler http.HandlerFunc) http.HandlerFunc {
+  return func(w http.ResponseWriter, r *http.Request) {
+    defer func() {
+      err := recover()
+      if err != nil {
+        log.Printf("%V PANIC url=%v, error=%v", r.RemoteAddr, err, r.RawURL)
+      }
+    }()
+    handler(w, r)
+  }
 }
