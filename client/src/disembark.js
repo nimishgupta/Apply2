@@ -229,7 +229,7 @@ function createLinks(loginData, dataById, comment) {
       // is clicked, it's invoked with the user's caps and then rewritten back
       // to href.
       var anchor = A({ href: href, target: '_blank' }, 
-                     dataById[maybeLink].lastName);;
+                     dataById[maybeLink].lastName);
       anchor.addEventListener('click', function() {
         anchor.href = unsafeHref;
         window.setTimeout(function() { anchor.href = href; }, 0);
@@ -247,10 +247,11 @@ function createLinks(loginData, dataById, comment) {
 
 function dispComment(loginData, dataById) {
   return function(comment) {
-    return DIV({ className: 'comment' },
+    return DIV({ className: 'row' },
+             DIV({ className: 'comment cell' },
                DIV(comment.reviewerName),
                DIV(relativeDate(comment.timestamp)),
-               DIV(createLinks(loginData, dataById, comment.text)));
+               DIV(createLinks(loginData, dataById, comment.text))));
   }
 }
 
@@ -348,7 +349,8 @@ function dispCommentPane(loginData, reviewers, data, fields, comments) {
       TEXTAREA({ id: 'composeTextarea', 
                  rows: 5, className: 'fill', placeholder: 'Compose Message' });
     var post = INPUT({ className: 'fill', type: 'button', value: 'Send' });
-    var commentDisp = DIV(arg.comments.map(dispComment(loginData, dataById)));
+    var commentDisp = DIV({ className: 'table' },
+      arg.comments.map(dispComment(loginData, dataById)));
     var commentCompose =
       DIV({className: 'hbox' }, 
         DIV({ className: 'flex1' }, DIV({ className: 'ctrl' }, compose)),
@@ -568,11 +570,14 @@ function isFirefox() {
 }
 
 function firefoxUI() {
-  var at = document.getElementById('applicantTable').parentNode
+  var at = document.getElementById('ffResizeChildren');
   var ft = document.getElementById('mainPanel').firstElementChild;
 
   F.$E(window, 'resize').mapE(function(evt) {
-   at.style.height = (document.body.clientHeight - ft.clientHeight - 50) + 'px';
+   var h = (document.body.clientHeight - ft.clientHeight - 50) + 'px';
+   at.firstElementChild.style.height = h;
+   document.getElementById('commentsPane').style.width =
+     (ft.clientWidth / 3 - 30) + 'px';
   });
 }
 
