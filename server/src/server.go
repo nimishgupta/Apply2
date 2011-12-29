@@ -20,7 +20,6 @@ const dataKey = "data"
 const materialKey = "material"
 const fetchCommentsKey = "fetchComments"
 const postCommentKey = "postComment"
-const getHighlightsKey = "getHighlights"
 const setHighlightKey = "setHighlight"
 const setScoreKey = "setScore"
 
@@ -214,7 +213,6 @@ func loginHandler(w http.ResponseWriter, r *http.Request) {
     "appsCap": capServer.Grant(dataKey, cred.Username),
     "materialsCap": capServer.Grant(materialKey, cred.Username),
     "fetchCommentsCap": capServer.Grant(fetchCommentsKey, cred.Username),
-    "readerHighlightsCap": capServer.Grant(getHighlightsKey, cred.Username),
     "reviewers": reviewers,
   })
   if err != nil {
@@ -288,7 +286,6 @@ func Serve(deptPath string, deptName string) {
   capServer.HandleFunc(materialKey, materialHandler)
   capServer.HandleFunc(fetchCommentsKey, fetchCommentsHandler)
   capServer.HandleFunc(postCommentKey, postCommentHandler)
-  capServer.HandleFunc(getHighlightsKey, getHighlightsHandler)
   capServer.HandleFunc(setHighlightKey, setHighlightHandler)
   capServer.HandleFunc(setScoreKey, setScoreHandler)
 

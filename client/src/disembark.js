@@ -9,7 +9,6 @@ var console;
 /**
  * @typedef {{ appsCap: string, 
  *             materialsCap: string,
- *             readerHighlightsCap: string,
  *             fetchCommentsCap: string,
  *             reviewers: Object }}
  */
@@ -518,11 +517,7 @@ var update = F.receiverE();
  */
 function loggedIn(urlArgs, loginData) {
   var reqData = { url: loginData.appsCap, request: 'get', response: 'json' };
-  var reqHL = { url: loginData.readerHighlightsCap, 
-                request: 'get', response: 'json' };
-
   var refresh = F.mergeE(F.oneE(true), update);
-
   loadData(urlArgs, loginData, 
     F.getWebServiceObjectE(refresh.constantE(reqData)));
 }
