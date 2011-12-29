@@ -206,14 +206,40 @@ function selectedApp(evt) {
 }
 
 /**
- * @param {AppComment} comment
- * @return {Node}
+ * @param {Object} dataById
  */
-function dispComment(comment) {
-  return DIV({ className: 'comment' },
-             DIV(comment.reviewerName),
-             DIV(relativeDate(comment.timestamp)),
-             DIV(comment.text));
+function createLinks(dataById, comment) {
+  var elts = [ ];
+  var i = comment.indexOf('#');
+  while (i !== -1) {
+    var j = comment.indexOf(';', i);
+    if (j === -1) {
+      break;
+    }
+    elts.push(comment.slice(0, i)); // Exclude #
+    // To lookup the id, excludes both # and ;
+    var maybeLink = comment.slice(i + 1, j); 
+    if (dataById[maybeLink]) {
+      elts.push(A({ href: '/#' + escape(JSON.stringify({ app: maybeLink })),
+                    target: '_blank' },
+                  dataById[maybeLink].lastName));
+    }
+    else {
+      elts.push(comment.slice(i, j + 1)); // Include both # and ; 
+    }
+    comment = comment.slice(j + 1); // Exclude ;
+  }
+  elts.push(comment);
+  return elts;
+}
+
+function dispComment(dataById) {
+  return function(comment) {
+    return DIV({ className: 'comment' },
+               DIV(comment.reviewerName),
+               DIV(relativeDate(comment.timestamp)),
+               DIV(createLinks(dataById, comment.text)));
+  }
 }
 
 function visibility(b) {
@@ -307,13 +333,14 @@ function dispCommentPane(reviewers, data, fields, comments) {
   var dataById = dataMap(data);
   function fn(arg) {
     var compose = 
-      TEXTAREA({ rows: 5, className: 'fill', placeholder: 'Compose Message' });
+      TEXTAREA({ id: 'composeTextarea', 
+                 rows: 5, className: 'fill', placeholder: 'Compose Message' });
     var post = INPUT({ className: 'fill', type: 'button', value: 'Send' });
-    var commentDisp = DIV(arg.comments.map(dispComment));
+    var commentDisp = DIV(arg.comments.map(dispComment(dataById)));
     var commentCompose =
       DIV({className: 'hbox' }, 
         DIV({ className: 'flex1' }, DIV({ className: 'ctrl' }, compose)),
-        DIV(DIV({ className: 'ctrl' }, post)));
+        DIV(post));
     F.getWebServiceObjectE(F.clicksE(post).mapE(function() {
       return { url: arg.post, request: 'rawPost', body: compose.value,
         response: 'plain' };
@@ -374,6 +401,7 @@ function dataMap(data) {
 function loadData(loginData, data) { 
   /** @type {Array.<Cols.TextCol>} */
   var fields = [
+    new Cols.IdCol('embarkId', 'Link', true),
     new Cols.StarCol('highlight', 'Starred', true),
     new Cols.TextCol('firstName','First Name', false),
     new Cols.TextCol('lastName', 'Last Name', true),
@@ -404,7 +432,7 @@ function loadData(loginData, data) {
     [ new filter.And(filterCl), new filter.Or(filterCl),
       new filter.Not(filterCl) ]));
   
-  var urlArgs = { };
+  var urlArgs = { app: '' };
   if (window.location.hash.length > 1) {
     try {
       urlArgs = JSON.parse(unescape(window.location.hash.slice(1)));
@@ -413,6 +441,9 @@ function loadData(loginData, data) {
     }
     if (typeof urlArgs !== 'object') {
       urlArgs = { };
+    }
+    if (typeof urlArgs.app !== 'string') {
+      urlArgs.app = '';
     }
   }
   var tableFilter = urlArgs.filter 
@@ -455,7 +486,7 @@ function loadData(loginData, data) {
       selected: selected.startsWith(acc.selected.valueNow()) }
   }
 
-  var v = data.collectE({ selected: F.constantB('') }, processData);
+  var v = data.collectE({ selected: F.constantB(urlArgs.app) }, processData);
   F.insertDomE(v.index('appTable'), 'applicantTable');
   // ID of the selected application
   //var selected =
@@ -497,7 +528,7 @@ function loggedIn(loginData) {
   var reqHL = { url: loginData.readerHighlightsCap, 
                 request: 'get', response: 'json' };
 
-  var refresh = F.mergeE(F.oneE(true), F.timerE(15000), update);
+  var refresh = F.mergeE(F.oneE(true), update);
 
   loadData(loginData, F.getWebServiceObjectE(refresh.constantE(reqData)));
 }

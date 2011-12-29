@@ -59,6 +59,32 @@ Cols.TextCol.prototype.display = function(obj) {
 };
 
 /**
+ * @constructor {IdCol}
+ * @extends {Cols.TextCol}
+ */
+Cols.IdCol = function (label, friendly, initVis) {
+  this.label_ = label;
+  this.friendly = friendly;
+  this.initVis = initVis;
+}
+goog.inherits(Cols.IdCol, Cols.TextCol);
+
+/**
+ * @return {Node}
+ */
+Cols.IdCol.prototype.display = function(obj) {
+  var val = obj[this.label_];
+  var link = DIV({ className: 'buttonLink' }, val);
+  F.$E(link, 'click').mapE(function() {
+    var compose = document.getElementById('composeTextarea');
+    if (compose) {
+      compose.value = compose.value + ' #' + val + '; ';
+    }
+  });
+  return link;
+};
+
+/**
  * @constructor
  * @extends {Cols.TextCol}
  * @param {string} label
