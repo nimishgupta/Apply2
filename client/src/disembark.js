@@ -304,6 +304,7 @@ function infoPane(fields, val) {
  * and highlight this application.
  */
 function dispCommentPane(reviewers, data, fields, comments) {
+  var dataById = dataMap(data);
   function fn(arg) {
     var compose = 
       TEXTAREA({ rows: 5, className: 'fill', placeholder: 'Compose Message' });
@@ -317,14 +318,14 @@ function dispCommentPane(reviewers, data, fields, comments) {
       return { url: arg.post, request: 'rawPost', body: compose.value,
         response: 'plain' };
     }));
-    var initRating = data[arg.appId]['score_rating']
-      ? data[arg.appId]['score_rating'][myRevId]
+    var initRating = dataById[arg.appId]['score_rating']
+      ? dataById[arg.appId]['score_rating'][myRevId]
       : '';
     var highlights =
       highlightPane(reviewers, arg.highlightedBy, arg.highlightCap);
     var ratings = ratingPane('rating', initRating, arg.setScoreCap);
     return {
-      info: infoPane(fields, data[arg.appId]),
+      info: infoPane(fields, dataById[arg.appId]),
       highlights: highlights,
       rating: ratings,
       commentDisp: commentDisp,
@@ -444,7 +445,7 @@ function loadData(loginData, data) {
 
     var detail  = 
       displayComments(loginData.reviewers, loginData.fetchCommentsCap,
-           selected, dataMap(data), fields);
+           selected, data, fields);
     return { appTable: appTable, detail: detail, 
       selected: selected.startsWith(acc.selected.valueNow()) }
   }
