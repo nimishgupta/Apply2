@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html>
+
+  <head>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8"/> 
+<link href="disembark.css" rel="stylesheet">
+</head>
+<body>
+
+<iframe src="blank.html" name="temp" style="display: none"></iframe>
+
+<div id="loginPanel" class="vbox">
+  <form class="vbox" action="blank.html" target="temp">
+    <div style="display: table">
+      <div style="display: table-row">
+        <div style="display: table-cell">
+          Username:
+        </div>
+        <div style="display: table-cell">
+          <input name="user" type="text" tabindex=0 id="username" />
+        </div>
+      </div>
+      <div style="display: table-row">
+        <div style="display: table-cell">
+          Password:
+        </div>
+        <div style="display: table-cell">
+          <input name="pass" type="password" id="password" />
+        </div>
+      </div>
+      <div style="display: table-row">
+        <div style="display: table-cell">
+          <input type="submit" id="login" value="Login" />
+        </div>
+      </div>
+    </div>
+  </form>
+</div>
+
+<div id="mainPanel" class="vbox" style="display: none">
+  <div class="grayPanel vbox">
+    <div id="showHideFilters" class="buttonLink">▼ Filters</div>
+    <div class="vbox" id="filterDetail">
+			<div>
+				<span id="copyFilters" class="buttonLink">Link to Filter</span>
+			</div>
+      <div id="filterPanel"></div>
+      <div id="vises"></div>
+    </div>
+  </div>
+  <div class="hbox flex1 whitePanel">
+    <div style="overflow: scroll" class="thrity flex1">
+      <div id="applicantTable"><div id="rows"></div></div>
+    </div>
+		<div class="thirty flex3 vbox detailPane">
+			<div id="infoPane"></div>
+		</div>
+		<div class="thirty flex3 vbox detailPane packCenter">
+			<div id="ratingPane"></div>
+      <div id="highlightPane"></div>
+      <div id="commentsPane">
+        <div class="placeholder">Select an application on the left</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="sjcl.js"></script>
+<script src="apply.min.js"></script>
+
+</body>
+
+</html>

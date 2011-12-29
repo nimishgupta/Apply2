@@ -1,0 +1,7 @@
+*.6
+server/apply
+cs-dept
+client/www/apply.min.js
+tools/closure-compiler.zip
+tools/closure-compiler
+tools/closure-library
