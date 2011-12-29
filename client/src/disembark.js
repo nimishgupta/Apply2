@@ -300,14 +300,14 @@ function highlightPane(reviewers, highlightedBy, highlightCap) {
 
 function ratingPane(label, init, setScoreCap) {
   function isValid(v) {
-    v = Number(v);
-    return v >= 0 && v <= 10;
+    var n = Number(v);
+    return v === '' || (n >= 0 && n <= 10);
   }
   function mkReq(v) {
     return {
       url: setScoreCap,
       request: 'post',
-      fields: { label: label, score: Number(v) },
+      fields: { label: label, score: v === '' ? null : Number(v) },
       response: 'plain'
     };
   }

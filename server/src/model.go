@@ -72,7 +72,7 @@ type Score struct {
   AppId string `json:"appId"`
   RevId ReviewerId `json:"revId"`
   Label string `json:"label"`
-  Score int `json:"score"`
+  Score *int `json:"score"`
 }
 
 type Dept struct {
@@ -372,16 +372,21 @@ func (self *Dept) GetReviewerIdMap() (map[string]string, os.Error) {
   return result, nil
 }
 
-// Create/update the specified score.
+// Create/update/delete the specified score. Signals an error on a concurrent
+// update, since _id is constructed.
 func (self *Dept) SetScore(score *Score) os.Error {
   // XXX: relies on the component ids being non-empty.
   _id := fmt.Sprintf("%s-%s-%s", score.AppId, score.RevId, score.Label)
   rows, err := query(self.scoresDB, "_design/myviews/_view/byId",_id)
   if len(rows) > 0 {
-    _, err = self.scoresDB.EditWith(score, _id, rows[0]["_rev"].(string))
+    _rev := rows[0]["_rev"].(string)
+    if score.Score == nil {
+      err = self.scoresDB.Delete(_id, _rev)
+    } else {
+      _, err = self.scoresDB.EditWith(score, _id, _rev)
+    }
     return err
   }
-  // Correctly signals an error on concurrent update, since _id is constructed.
   _, _, err = self.scoresDB.InsertWith(score, _id)
   return err
 }

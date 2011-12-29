@@ -268,7 +268,8 @@ func TestScores(t *testing.T) {
   dept.NewReviewer("myrev", "Claus", "redbull66")
   dept.NewApplication(Application{ "myappid", nil, nil, nil, nil,
     nil, nil, nil, nil, nil, nil, nil })
-  err := dept.SetScore(&Score{"myappid","myrev","total",100})
+  scr := 100
+  err := dept.SetScore(&Score{"myappid","myrev","total",&scr})
   if err != nil {
     t.Fatalf("first SetScore failed: %v", err)
   }
@@ -284,12 +285,24 @@ func TestScores(t *testing.T) {
     t.Fatalf("expected score to be 100, got score map %v", scoreMap)
   }
 
-  err = dept.SetScore(&Score{"myappid","myrev","total",50})
+  scr = 50
+  err = dept.SetScore(&Score{"myappid","myrev","total",&scr})
   if err != nil {
     t.Fatalf("second SetScore failed: %v", err)
   }
   apps, _ = dept.Applications("0")
   if apps[0]["score_total"].(map[string]float64)["myrev"] != 50 {
     t.Fatalf("expected score to be 50, got apps %v", apps)
+  }
+
+  err = dept.SetScore(&Score{"myappid","myrev","total",nil})
+  if err != nil {
+    t.Fatalf("third SetScore failed: %v", err)
+  }
+  
+  apps, _ = dept.Applications("0")
+  bad, found := apps[0]["score_total"]
+  if found {
+    t.Fatalf("expected score to be deleted, got %v", bad)
   }
 }

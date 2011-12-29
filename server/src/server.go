@@ -240,7 +240,7 @@ func setScoreHandler(key string, w http.ResponseWriter, r *http.Request) {
   }
   var req struct {
     Label string `json:"label"`
-    Score int `json:"score"`
+    Score *int `json:"score"`
   }
   err = util.ReaderToJSON(r.Body, int(r.ContentLength), &req)
   if err != nil && req.Label != "score" {
