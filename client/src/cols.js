@@ -338,7 +338,7 @@ Cols.StarCol.prototype.makeFilter = function(init) {
   var checked = F.$B(input);
   var fn = checked.liftB(function(sel) {
     return function(obj) {
-      return obj[this_.label_] === true;
+      return (obj[this_.label_].length > 0) === sel;
     };
   });
 
@@ -347,7 +347,7 @@ Cols.StarCol.prototype.makeFilter = function(init) {
 };
 
 Cols.StarCol.prototype.display = function(val) {
-  if (val[this.label_]) {
+  if (val[this.label_].length > 0) {
     return IMG({ src: 'star.png', className: 'star', alt: 'Highlighted' });
   }
   else {

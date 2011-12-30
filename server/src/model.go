@@ -143,7 +143,7 @@ func NewDept(host string, port string, prefix string) (dept *Dept, err os.Error)
     "language": "javascript",
     "views": map[string]interface{} {
       "byReader": map[string]interface{} {
-        "map": `function(doc) { emit(doc.readerId, doc.appId); }`,
+        "map": `function(doc) { emit(doc.readerId, { writerId: doc.writerId, appId: doc.appId }); }`,
       },
       "byApp": map[string]interface{} {
         "map": `function(doc) { emit(doc.appId, { _rev: doc._rev, _id: doc._id, readerId: doc.readerId }); }`,
@@ -215,8 +215,16 @@ func (self *Dept) Applications(revId string) ([]map[string]interface{},
   if err != nil {
     return nil, err
   }
-  highlights, err := getCouchViewValues(self.highlightsDB, 
-    "_design/myviews/_view/byReader", revId)
+  var highlights struct {
+    Rows []struct {
+      Value struct {
+        WriterId string `json:"writerId"`
+        AppId string `json:"appId"`
+      }
+   }
+  }
+  err = self.highlightsDB.Query("_design/myviews/_view/byReader",
+    map[string]interface{}{ "key": revId }, &highlights)
   if err != nil {
     return nil, err
   }
@@ -226,7 +234,7 @@ func (self *Dept) Applications(revId string) ([]map[string]interface{},
   for _, row := range apps["rows"].([]interface{}) {
     app := row.(map[string]interface{})
     appMap[app["id"].(string)] = app["doc"].(map[string]interface{})
-    appMap[app["id"].(string)]["highlight"] = false
+    appMap[app["id"].(string)]["highlight"] = make([]string, 0, 1)
   }
   for _, rawRow := range scores["rows"].([]interface{}) {
     row := rawRow.(map[string]interface{})
@@ -242,10 +250,10 @@ func (self *Dept) Applications(revId string) ([]map[string]interface{},
       app[label] = map[string]float64{ reviewer: val }
     }
   }
-  for _, highlightId := range highlights {
-    appMap[highlightId]["highlight"] = true
+  for _, row := range highlights.Rows {
+    prev := appMap[row.Value.AppId]["highlight"].([]string)
+    appMap[row.Value.AppId]["highlight"] = append(prev, row.Value.WriterId)
   }
-
   i := 0
   result := make([]map[string]interface{}, len(appMap))
   for _, app := range appMap {
@@ -359,28 +367,6 @@ func query(d *db.Database, view string, key string) ([]map[string]interface{},
   return vals, nil
 }
 
-func getCouchViewValues(d *db.Database, view string, 
-  key string) ([]string, os.Error) {
-  var r map[string]interface{}
-  q := map[string]interface{}{ "key": key, "include_docs": false }
-  err := d.Query(view, q, &r)
-  if err != nil {
-    return nil, err
-  }
-  rows := r["rows"].([]interface{})
-  vals := make([]string, len(rows))
-  for i, row := range(rows) {
-    vals[i] = row.(map[string]interface{})["value"].(string)
-  }
-  return vals, nil
-}
-
-func (self *Dept) GetHighlights(readerId ReviewerId) ([]string, os.Error) {
-  r, err := getCouchViewValues(self.highlightsDB, 
-    "_design/myviews/_view/byReader", string(readerId))
-  return r, err
-}
-
 func (self *Dept) HighlightsByApp(appId string) ([]string, os.Error) {
   var r HighlightsByAppResult
   err := self.highlightsDB.Query("_design/myviews/_view/byApp", nil, &r)
@@ -401,7 +387,6 @@ func (self *Dept) GetReviewerIdMap() (map[string]string, os.Error) {
     return nil, err
   }
  
-  // Code panics if CouchDB response is malformed.
   rows := r["rows"].([]interface{})
   result := make(map[string]string, len(rows))
   for _, row := range(rows) {

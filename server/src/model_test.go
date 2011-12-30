@@ -175,32 +175,34 @@ func TestHighlighting(t *testing.T) {
   _ = d.NewApplication(mkApp("3"))
   _ = d.NewApplication(mkApp("4"))
 
-  lst, err := d.GetHighlights(rev2.Id)
-  if err != nil {
-    t.Fatalf("1st GetHighlights failed: %v", err)
-  }
-  if len(lst) != 0 {
-    t.Fatalf("expected 0, got %v", len(lst))
-  }
-
   hl := &Highlight{"1", rev2.Id, rev1.Id, "Writer", 900}
-  err = d.SetHighlight(hl)
+  err := d.SetHighlight(hl)
   if err != nil {
     t.Fatalf("SetHighlight error: %v", err)
   }
 
-  lst, err = d.GetHighlights(rev2.Id)
+  rev2Apps, err := d.Applications("reader@revs.org")
   if err != nil {
-    t.Fatalf("2nd GetHighlights error: %v", err)
+    t.Fatalf("error: %v", err)
   }
-  if len(lst) != 1 {
-    t.Fatalf("expected 1 highlight, got %v", lst)
+  found := false
+  for _, app := range rev2Apps {
+    if app["embarkId"] == "1" {
+      found = true
+      lst := app["highlight"].([]string)
+      if len(lst) != 1 {
+        t.Fatalf("expected 1 highlight, got %v (len=%v)", lst, len(lst))
+      }
+      if lst[0] != "writer@revs.org" {
+        t.Fatalf("expected highlight on appId=1, got %v", lst[0])
+      }
+    }
   }
-  if lst[0] != "1" {
-    t.Fatalf("expected highlight on appId=1, got %v", lst[0])
+  if !found {
+    t.Fatalf("app. not returned, got %v", rev2Apps)
   }
 
-  lst, err = d.HighlightsByApp("1")
+  lst, err := d.HighlightsByApp("1")
   if err != nil {
     t.Fatalf("HighlightsByApp error: %v", err)
   }
