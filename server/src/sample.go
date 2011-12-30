@@ -91,12 +91,46 @@ func CreateSampleReviewers(dept *model.Dept) {
   }
 }
 
+func CreateSampleHighlights(dept *model.Dept) {
+  apps, err := dept.Applications("0")
+  if err != nil {
+    panic(err)
+  }
+  revs, err := dept.GetReviewerIdMap()
+  if err != nil {
+    panic(fmt.Sprintf("GetReviwerIdMap failed, err=%v", err))
+  }
+  expectedHighlights := len(apps) * 2 
+  events := len(apps) * len(revs) * len(revs)
+  Pinv := events / expectedHighlights
+  for _, app := range apps {
+    for writerId, writerName := range revs {
+      for readerId, _ := range revs {
+        if randInt(Pinv) != 0 {
+          continue
+        }
+        hl := &model.Highlight{app["embarkId"].(string),
+                model.ReviewerId(readerId), model.ReviewerId(writerId), 
+                writerName, randTime()}
+        err = dept.SetHighlight(hl)
+        if err != nil {
+          panic(err)
+        }
+      }
+    }
+  }
+
+}
+
 func Populate(dept *model.Dept) {
-  fmt.Printf("Creating reviewers ...")
+  fmt.Println("Creating reviewers ...")
   CreateSampleReviewers(dept)
   fmt.Println("Creating sample comments ...")
   LoadRandomComments(dept)
+  fmt.Println("Creating sample highlights ...")
+  CreateSampleHighlights(dept)
 }
+
 /*
 func Make(prefix string, numApps int) os.Error {
   dept, err := model.NewDept("localhost", "5984", prefix)
