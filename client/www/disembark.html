@@ -43,6 +43,7 @@
     <div id="banner" class="hbox">
       <div>Brown University | Department of Computer Science</div>
       <div id="friendly" class="flex1" style="text-align: right"></div>
+      <div><a href="#" id="pass">Change Password</a></div>
       <div><a href="#" id="logout">Logout</a></div>
     </div>
     <div id="showHideFilters" class="buttonLink">▼ Filters</div>
@@ -74,6 +75,17 @@
       </div>
     </div>
   </div>
+</div>
+
+<div id="passwordPanel" style="display:none; background-color: white">
+
+<div>Current password:<input id="pwOld" type="password"/></div>
+<div>New password:<input id="pwNew1" type="password"/></div>
+<div>Repat password:<input id="pwNew2" type="password"/></div>
+<b><div id="pwStatus"></div></b>
+<input type="button" value="Change Password" id="pwSet">
+<div id="pwBack" class="buttonLink">Back</div>
+
 </div>
 
 <script src="apply.min.js"></script>

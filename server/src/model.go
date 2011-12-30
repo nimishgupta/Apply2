@@ -284,13 +284,25 @@ func (self *Dept) AuthReviewer(id ReviewerId, pw string) (*Reviewer, os.Error) {
     log.Printf("AuthReviewer(%v, _) - user does not exist", id);
     return nil, err
   }
-
   if (bytes.Equal(rev.PasswordHash, util.HashString(pw)) == false) {
     log.Printf("AuthReviewer(%v, _) - incorrect password", id);
     return nil, os.NewError("invalid password")
   }
-
   return &rev, nil
+}
+
+func (self *Dept)ChangePassword(id ReviewerId, pw string) os.Error {
+  var user Reviewer
+  _rev, err := self.reviewerDB.Retrieve(string(id), &user)
+  if err != nil {
+    return os.NewError("invalid username")
+  }
+  if len(pw) < 5 {
+    return os.NewError("password too short (six characters required)")
+  }
+  user.PasswordHash = util.HashString(pw)
+  _, err = self.reviewerDB.EditWith(user, string(id), _rev)
+  return err
 }
 
 func (self *Dept) GetReviewerById(revId ReviewerId) (*Reviewer, os.Error) {

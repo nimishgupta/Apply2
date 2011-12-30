@@ -23,6 +23,7 @@ const postCommentKey = "postComment"
 const setHighlightKey = "setHighlight"
 const delHighlightKey = "delHighlight"
 const setScoreKey = "setScore"
+const changePasswordKey = "changePassword"
 
 var capServer caps.CapServer
 var dept *model.Dept
@@ -226,6 +227,7 @@ func loginHandler(w http.ResponseWriter, r *http.Request) {
     "appsCap": capServer.Grant(dataKey, cred.Username),
     "materialsCap": capServer.Grant(materialKey, cred.Username),
     "fetchCommentsCap": capServer.Grant(fetchCommentsKey, cred.Username),
+    "changePasswordCap": capServer.Grant(changePasswordKey, cred.Username),
     "reviewers": reviewers,
   })
   if err != nil {
@@ -271,6 +273,44 @@ func setScoreHandler(key string, w http.ResponseWriter, r *http.Request) {
   return  
 }
 
+func changePasswordHandler(key string, w http.ResponseWriter, r *http.Request) {
+  user := key
+  if r.Method != "POST" {
+    log.Printf("%v SECURITY ERROR %v trying to %v to %v", r.RemoteAddr,
+      user, r.Method, r.URL)
+    w.WriteHeader(http.StatusBadRequest)
+    r.Close = true
+    return
+  }
+  var req struct { 
+    OldPassword string `json:"oldPassword"`
+    NewPassword string `json:"newPassword"` 
+  }
+  err := util.ReaderToJSON(r.Body, int(r.ContentLength), &req)
+  if err != nil {
+    w.WriteHeader(http.StatusBadRequest)
+    r.Close = true
+    return
+  }
+  _, err = dept.AuthReviewer(model.ReviewerId(user), req.OldPassword)
+  if err != nil {
+    w.WriteHeader(http.StatusBadRequest)
+    w.Write(util.StringToBytes(fmt.Sprintf("%v", err)))
+    r.Close = true
+    return
+  }
+  err = dept.ChangePassword(model.ReviewerId(user), req.NewPassword)
+  if err != nil {
+    w.WriteHeader(http.StatusBadRequest)
+    w.Write(util.StringToBytes(fmt.Sprintf("%v", err)))
+    r.Close = true
+    return
+  }
+  w.WriteHeader(200)
+  w.Write(util.StringToBytes("Password changed"))
+  return
+}
+
 func Serve(deptPath string, deptName string) {
   keyFile := deptPath + "/private.key"
   fi, err := os.Lstat(keyFile)
@@ -302,6 +342,7 @@ func Serve(deptPath string, deptName string) {
   capServer.HandleFunc(setHighlightKey, setHighlightHandler)
   capServer.HandleFunc(delHighlightKey, delHighlightHandler)
   capServer.HandleFunc(setScoreKey, setScoreHandler)
+  capServer.HandleFunc(changePasswordKey, changePasswordHandler)
 
   http.HandleFunc("/caps/", util.ProtectHandler(capServer.CapHandler()))
   http.HandleFunc("/login", util.ProtectHandler(loginHandler))

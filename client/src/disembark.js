@@ -11,6 +11,7 @@ var console;
  *  appsCap: string, 
  *  materialsCap: string,
  *  fetchCommentsCap: string,
+ *  changePasswordCap: string,
  *  reviewers: !Object.<string, string>,
  *  revId: string,
  *  friendlyName: string
@@ -530,11 +531,63 @@ function mkLogin() {
   };
 }
 
+/**
+ * @param {LoginResponse} loginData
+ */
+function setupPasswordChange(loginData) {
+  var mainPanel = document.getElementById('mainPanel');
+  var passwordPanel = document.getElementById('passwordPanel');
+  var pass = document.getElementById('pass');
+  var pwNew1 = document.getElementById('pwNew1');
+  var pwNew2 = document.getElementById('pwNew2');
+  var pwOld = document.getElementById('pwOld');
+  var pwStatus = document.getElementById('pwStatus');
+  var pwSet = document.getElementById('pwSet');
+  var pwBack = document.getElementById('pwBack');
+
+  var new1B = F.$B(pwNew1);
+  var new2B = F.$B(pwNew2);
+  var oldB = F.$B(pwOld);
+  
+  F.$E(pass, 'click').mapE(function(_) {
+    mainPanel.style.display = 'none';
+    passwordPanel.style.display = '';
+  });
+  F.$E(pwBack, 'click').mapE(function(_) {
+    mainPanel.style.display = '';
+    passwordPanel.style.display = 'none';
+    pwNew1.value = pwNew2.value = pwOld.value = '';
+    new1B.sendBehavior('');
+    new2B.sendBehavior('');
+    oldB.sendBehavior('');
+    pwStatus.innerText = '';
+  });
+  var enabled = F.liftB(function(new1, new2) {
+    return new1 === new2 && new1.length > 5 ? '' : 'disabled';
+  }, new1B, new2B);
+
+  F.insertValueB(enabled, pwSet, 'disabled');
+  
+  function mkReq(oldPw, newPw) {
+      return {
+        url: loginData.changePasswordCap,
+        request: 'post',
+        fields: { oldPassword: oldPw, newPassword: newPw },
+        response: 'plain'
+      };
+  }
+
+  var reqs = F.clicksE(pwSet).snapshotE(F.liftB(mkReq, oldB, new1B));
+  F.insertDomB(DIV(F.getWebServiceObjectE(reqs).startsWith('')), 'pwStatus');
+}
+
 var update = F.receiverE();
 /**
  * @param {LoginResponse} loginData
  */
 function loggedIn(urlArgs, loginData) {
+  setupPasswordChange(loginData);
+
   document.getElementById('friendly').appendChild(TEXT(loginData.friendlyName));
   var reqData = { url: loginData.appsCap, request: 'get', response: 'json' };
   var refresh = F.mergeE(F.oneE(true), update);
