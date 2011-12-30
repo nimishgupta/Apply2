@@ -427,6 +427,9 @@ func (self *Dept) SetScore(score *Score) os.Error {
     }
     return err
   }
+  if score.Score == nil {
+    return os.NewError("attempt to delete score that does not exist")
+  }
   _, _, err = self.scoresDB.InsertWith(score, _id)
   return err
 }
