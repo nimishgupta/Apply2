@@ -333,7 +333,8 @@ func (self *Dept) SetHighlight(hl *Highlight) os.Error {
 
 func (self *Dept) DelHighlight(appId, readerId string) os.Error {
   var r HighlightsByAppResult
-  err := self.highlightsDB.Query("_design/myviews/_view/byApp", nil, &r)
+  err := self.highlightsDB.Query("_design/myviews/_view/byApp",
+    map[string]interface{}{ "key": appId }, &r)
   if err != nil {
     return err
   }
@@ -369,7 +370,8 @@ func query(d *db.Database, view string, key string) ([]map[string]interface{},
 
 func (self *Dept) HighlightsByApp(appId string) ([]string, os.Error) {
   var r HighlightsByAppResult
-  err := self.highlightsDB.Query("_design/myviews/_view/byApp", nil, &r)
+  err := self.highlightsDB.Query("_design/myviews/_view/byApp",
+    map[string]interface{}{ "key": appId }, &r)
   if err != nil {
     return nil, err
   }
