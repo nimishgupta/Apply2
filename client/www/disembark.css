@@ -271,6 +271,7 @@ textarea {
 .comment {
   margin: 3px;
   border-bottom: 1px solid #cccccc;
+  white-space: pre-wrap;
 }
 
 .comment  div:first-child {
