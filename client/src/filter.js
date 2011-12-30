@@ -30,9 +30,10 @@ filter.Nil = function() {
 }
 
 /**
+ * @param {*=} init
  * @return {Cols.Filter}
  */
-filter.Nil.prototype.makeFilter = function() {
+filter.Nil.prototype.makeFilter = function(init) {
   return {
     fn: F.constantB(function(_) { return true; }),
     elt: DIV({ className: 'err' }, 'Error: Nil filter selected'),
@@ -53,8 +54,8 @@ filter.Not = function(subFilter) {
 goog.inherits(filter.Not, filter.Nil);
 
 /**
- * @param {Object=} init
- * @return {Cols.Filter}
+ * @param {!Cols.Filter=} init
+ * @return {!Cols.Filter}
  */
 filter.Not.prototype.makeFilter = function(init) {
   var sub = init ? init : this.subFilter_.makeFilter();

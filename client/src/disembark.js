@@ -7,16 +7,20 @@ goog.require('filter');
 var console;
 
 /**
- * @typedef {{ appsCap: string, 
- *             materialsCap: string,
- *             fetchCommentsCap: string,
- *             reviewers: Object }}
+ * @typedef {{
+ *  appsCap: string, 
+ *  materialsCap: string,
+ *  fetchCommentsCap: string,
+ *  reviewers: !Object.<string, string>,
+ *  revId: string
+ * }}
  */
 var LoginResponse;
 
 /**
  * @typedef {{
- *   embarkId: number
+ *   embarkId: number,
+ *   lastName: string
  * }}
  */
 var Application;
@@ -27,7 +31,9 @@ var Application;
 var AppComment;
 
 /**
- * @typedef{{ comments: Array.<AppComment>, post: string, highlightCap: string,
+ * @typedef{{ comments: Array.<AppComment>, post: string, 
+ *   highlightCap: string,
+ *   unhighlightCap: string,
  *            highlightedBy: Array.<string>, setScoreCap: string }}
  */
 var FetchCapResponse;
@@ -198,7 +204,7 @@ function selectedApp(evt) {
 }
 
 /**
- * @param {Object} dataById
+ * @param {Application} dataById
  */
 function createLinks(loginData, dataById, comment) {
   var elts = [ ];
@@ -225,7 +231,7 @@ function createLinks(loginData, dataById, comment) {
       anchor.addEventListener('click', function() {
         anchor.href = unsafeHref;
         window.setTimeout(function() { anchor.href = href; }, 0);
-      });
+      }, false);
       elts.push(anchor);
     }
     else {
@@ -438,7 +444,8 @@ function loadData(urlArgs, loginData, data) {
     makeFilter: function() { return filt.makeFilter(); }
   };
   var filt = new filter.Picker(fields.concat(
-    [ new filter.And(filterCl), new filter.Or(filterCl),
+    [ new filter.And(filterCl),
+      new filter.Or(filterCl),
       new filter.Not(filterCl) ]));
   
   var tableFilter = urlArgs.filter 
