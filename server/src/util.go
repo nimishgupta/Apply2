@@ -117,7 +117,7 @@ func ProtectHandler(handler http.HandlerFunc) http.HandlerFunc {
     defer func() {
       err := recover()
       if err != nil {
-        log.Printf("%V PANIC url=%v, error=%v", r.RemoteAddr, err, r.RawURL)
+        log.Printf("%v PANIC url=%v, error=%v", r.RemoteAddr, err, r.RawURL)
       }
     }()
     handler(w, r)
