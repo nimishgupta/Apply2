@@ -356,8 +356,15 @@ function dispCommentPane(loginData, reviewers, data, fields, comments) {
         DIV({ className: 'flex1' }, DIV({ className: 'ctrl' }, compose)),
         DIV(post));
     F.getWebServiceObjectE(F.clicksE(post).mapE(function() {
-      return { url: arg.post, request: 'rawPost', body: compose.value,
-        response: 'plain' };
+      var c = compose.value;
+      compose.value = '';
+      commentDisp.appendChild(
+        dispComment(loginData, dataById)({ 
+          reviewerName: loginData.friendlyName,
+          text: c,
+          timestamp: Math.floor((new Date()).valueOf() / 1000)
+        }));
+      return { url: arg.post, request: 'rawPost', body: c, response: 'plain' };
     }));
     var initRating = dataById[arg.appId]['score_rating']
       ? dataById[arg.appId]['score_rating'][myRevId]
