@@ -1,9 +1,14 @@
 goog.provide('Cols');
 goog.require('goog.string');
+goog.require('F');
 
 /**
- * A text column
- *
+ * @typedef {{ fn: !F.Behavior, elt: !Node, ser: !F.Behavior, 
+ *             disabled: !F.Behavior }}
+ */
+Cols.Filter;
+
+/**
  * @param {string} label name
  * @param {string} friendly name
  * @constructor
@@ -15,8 +20,8 @@ Cols.TextCol = function (label, friendly, initVis) {
 }
 
 /**
- * @param {string=} init
- * @return {{ fn: F.Behavior, elt: Node }}
+ * @param {*=} init
+ * @return {Cols.Filter}
  */
 Cols.TextCol.prototype.makeFilter = function(init) {
   var elt = INPUT({ type: 'text', placeholder: this.friendly, value: init });
@@ -32,15 +37,17 @@ Cols.TextCol.prototype.makeFilter = function(init) {
   return { fn: fn, elt: elt, ser: ser, disabled: F.constantB(false) };
 };
 
+/**
+ * @param {Object} o1
+ * @param {Object} o2
+ * @return {number}
+ */
 Cols.TextCol.prototype.compare = function(o1, o2) {
-  var v1 = o1[this.label_], 
-      v2 = o2[this.label_];
-  if (v1 < v2) { return -1; }
-  else if (v1 > v2) { return 1; }
-  else { return 0; }
+  return o1[this.label_] - o2[this.label_];
 };
 
 /**
+ * @param {Object} obj
  * @return {Node}
  */
 Cols.TextCol.prototype.display = function(obj) {
@@ -59,6 +66,9 @@ Cols.TextCol.prototype.display = function(obj) {
 };
 
 /**
+ * @param {string} label
+ * @param {string} friendly
+ * @param {boolean} initVis
  * @constructor {IdCol}
  * @extends {Cols.TextCol}
  */
@@ -69,9 +79,6 @@ Cols.IdCol = function (label, friendly, initVis) {
 }
 goog.inherits(Cols.IdCol, Cols.TextCol);
 
-/**
- * @return {Node}
- */
 Cols.IdCol.prototype.display = function(obj) {
   var val = obj[this.label_];
   var link = DIV({ className: 'buttonLink' }, val);
@@ -89,6 +96,7 @@ Cols.IdCol.prototype.display = function(obj) {
  * @extends {Cols.TextCol}
  * @param {string} label
  * @param {string} friendly
+ * @param {boolean} initVis
  */
 Cols.EnumCol = function(label, friendly, initVis) {
   this.label_ = label;
@@ -98,9 +106,6 @@ Cols.EnumCol = function(label, friendly, initVis) {
 }
 goog.inherits(Cols.EnumCol, Cols.TextCol);
 
-/**
- * @return {Node}
- */
 Cols.EnumCol.prototype.display = function(obj) {
   this.elems_[obj[this.label_]] = true;
   var val = obj[this.label_];
@@ -148,6 +153,7 @@ Cols.EnumCol.prototype.makeFilter = function(init) {
  * @extends {Cols.TextCol}
  * @param {string} label
  * @param {string} friendly
+ * @param {boolean} initVis
  */
 Cols.SetCol = function(label, friendly, initVis) {
   this.label_ = label;
@@ -193,15 +199,16 @@ Cols.SetCol.prototype.makeFilter = function(init) {
 };
 
 Cols.SetCol.prototype.compare = function(o1, o2) {
-  // TODO: fixme
-  throw 'cannot compare SetCol';
+  var v1 = o1[this.label_];
+  var v2 = o2[this.label_];
+  // TODO: discriminate further when lengths are equal
+  return v1.length - v2.length;
 };
 
 /**
- * A number column
- *
  * @param {string} label field name
  * @param {string} friendly column name
+ * @param {boolean} initVis
  * @constructor
  * @extends {Cols.TextCol}
  */
@@ -213,7 +220,6 @@ Cols.NumCol = function(label, friendly, initVis) {
 goog.inherits(Cols.NumCol, Cols.TextCol);
 
 /**
- *
  * @param {{min: string, max: string}=} init
  */
 Cols.NumCol.prototype.makeFilter = function(init) {
@@ -294,17 +300,22 @@ Cols.MatsCol.prototype.display = function(val) {
 Cols.MatsCol.prototype.makeFilter = function() {
   return { 
     fn: F.constantB(function() { return true; }), 
-    elt: DIV("Cannot filter on materials"),
+    elt: DIV("Cannot filter on materials"), // TODO: fixme
     disabled: F.constantB(true),
-    ser: { t: 'Mats' }
+    ser: F.constantB({ t: 'Mats' })
   };
 };
 
+Cols.MatsCol.prototype.compare = function(o1, o2) {
+  var v1 = o1[this.label_];
+  var v2 = o2[this.label_];
+  return v1.length - v2.length;
+};
+
 /**
- * A column of stars
- *
  * @param {string} label field name
  * @param {string} friendly column name
+ * @param {boolean} initVis
  * @constructor
  * @extends {Cols.TextCol}
  */
@@ -335,14 +346,6 @@ Cols.StarCol.prototype.makeFilter = function(init) {
     ser: checked.liftB(function(v) { return { t: 'Star', v: v } }) };
 };
 
-Cols.StarCol.prototype.compare = function(o1, o2) {
-  var v1 = o1[this.label_];
-  var v2 = o2[this.label_];
-  if (v1 === true && v2 === false) { return 1; }
-  else if (v1 === false && v2 === true) { return -1; }
-  else { return 0; }
-};
-
 Cols.StarCol.prototype.display = function(val) {
   if (val[this.label_]) {
     return IMG({ src: 'star.png', className: 'star', alt: 'Highlighted' });
@@ -355,6 +358,10 @@ Cols.StarCol.prototype.display = function(val) {
 /**
  * @constructor
  * @extends{Cols.TextCol}
+ * @param {string} label
+ * @param {string} friendly
+ * @param {!Object} reviewers
+ * @param {boolean} initVis
  */
 Cols.ScoreCol = function(label, friendly, reviewers, initVis) {
   this.label_ = label;
@@ -378,5 +385,6 @@ Cols.ScoreCol.prototype.display = function(val) {
         }
         return DIV(this_.reviewers_[revId] + ": " + score);
       }));
-}
+};
 
+// TODO: sorting and filtering on scores

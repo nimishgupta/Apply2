@@ -1,6 +1,5 @@
 goog.provide('filter');
 
-
 filter.deserialize = function(rec, i, ser) {
   switch (ser.t) {
     case 'And':
@@ -31,7 +30,7 @@ filter.Nil = function() {
 }
 
 /**
- * @return {{fn : F.Behavior, elt: Node, disabled: F.Behavior }}
+ * @return {Cols.Filter}
  */
 filter.Nil.prototype.makeFilter = function() {
   return {
@@ -55,6 +54,7 @@ goog.inherits(filter.Not, filter.Nil);
 
 /**
  * @param {Object=} init
+ * @return {Cols.Filter}
  */
 filter.Not.prototype.makeFilter = function(init) {
   var sub = init ? init : this.subFilter_.makeFilter();
@@ -69,6 +69,7 @@ filter.Not.prototype.makeFilter = function(init) {
 /**
  * @constructor
  * @extends {filter.Nil}
+ * @param {filter.Nil} subFilter
  */
 filter.And = function(subFilter) {
   this.subFilter_ = subFilter;
@@ -78,7 +79,7 @@ goog.inherits(filter.And, filter.Nil);
 
 /**
  * @param {Array.<filter.Nil>=} inits
- * @return {{ fn: F.Behavior, elt: Node }}
+ * @return {Cols.Filter}
  */
 filter.And.prototype.makeFilter = function(inits) {
   var edit = F.receiverE();
@@ -154,6 +155,7 @@ filter.And.prototype.makeFilter = function(inits) {
 /**
  * @constructor
  * @extends {filter.Nil}
+ * @param {filter.Nil} subFilter
  */
 filter.Or = function(subFilter) {
   this.subFilter_ = subFilter;
@@ -161,6 +163,10 @@ filter.Or = function(subFilter) {
 };
 goog.inherits(filter.Or, filter.Nil);
 
+/**
+ * @param {Array.<filter.Nil>=} inits
+ * @return {Cols.Filter}
+ */
 filter.Or.prototype.makeFilter = function(inits) {
   var edit = F.receiverE();
   var this_ = this;
@@ -232,8 +238,9 @@ filter.Or.prototype.makeFilter = function(inits) {
 };
 
 /**
- * @constructor Picker
+ * @constructor
  * @extends {filter.Nil}
+ * @param {Array.<filter.Nil>=} filters
  */
 filter.Picker = function(filters) {
   this.friendly = "Select ...";
@@ -241,6 +248,10 @@ filter.Picker = function(filters) {
 };
 goog.inherits(filter.Picker, filter.Nil);
 
+/**
+ * @param {Cols.Filter=} init
+ * @return {Cols.Filter}
+ */
 filter.Picker.prototype.makeFilter = function(init) {
   var filters = this.filters_;
   var ix = 0;
@@ -277,8 +288,8 @@ filter.Picker.prototype.makeFilter = function(init) {
     fn: subFilter.mapE(function(v) { return v.fn; })
                      .startsWith(init.fn)
                      .switchB(),
-    elt: subFilter.mapE(function(v) { return v.elt; })
-                  .startsWith(init.elt),
+    elt: DIV(subFilter.mapE(function(v) { return v.elt; })
+                  .startsWith(init.elt)),
     disabled: selE.mapE(function(ix) { return ix === '-1'; })
               .startsWith(init.disabled.valueNow()),
     ser: ser
