@@ -528,7 +528,7 @@ var update = F.receiverE();
  * @param {LoginResponse} loginData
  */
 function loggedIn(urlArgs, loginData) {
-  document.getElementById('friendly').innerText = loginData.friendlyName;
+  document.getElementById('friendly').appendChild(TEXT(loginData.friendlyName));
   var reqData = { url: loginData.appsCap, request: 'get', response: 'json' };
   var refresh = F.mergeE(F.oneE(true), update);
   loadData(urlArgs, loginData, 
