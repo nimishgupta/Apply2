@@ -57,6 +57,15 @@ func main() {
     dept, err := model.NewDept("localhost", "5984", os.Args[2])
     if (err != nil) { panic(err) }
     dept.NewReviewer(model.ReviewerId("arjun"), "Arjun Guha", "redbull64")
+  case "-user":
+    dept, err := model.LoadDept("localhost", "5984", os.Args[2])
+    if err != nil {
+      panic(err)
+    }
+    dept.NewReviewer(model.ReviewerId(os.Args[3]), os.Args[4], os.Args[5])
+    if err != nil {
+      panic(err)
+    }
   case "-load":
     src, err := ioutil.ReadFile(os.Args[2])
     if (err != nil) { panic(err) }
