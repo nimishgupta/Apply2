@@ -67,33 +67,23 @@ filter.Not.prototype.makeFilter = function(init) {
 };
 
 /**
- * @constructor
- * @extends {filter.Nil}
- * @param {filter.Nil} subFilter
- */
-filter.And = function(subFilter) {
-  this.subFilter_ = subFilter;
-  this.friendly = "And " + subFilter.friendly;
-};
-goog.inherits(filter.And, filter.Nil);
-
-/**
+ * @param {filter.Nil} defaultSubFilter
+ * @param {boolean} isAnd
  * @param {Array.<filter.Nil>=} inits
  * @return {Cols.Filter}
  */
-filter.And.prototype.makeFilter = function(inits) {
+filter.genericMakeFilter = function(defaultSubFilter, isAnd, inits) {
   var edit = F.receiverE();
-  var this_ = this;
 
   // TODO: init is now misnamed, should be empty
-  var init = inits ? inits : [ this.subFilter_.makeFilter() ];
+  var init = inits ? inits : [ defaultSubFilter.makeFilter() ];
   var arr = edit.collectE(init, function(v, arr) {
     if (v === 'new') {
-      return arr.concat([ this_.subFilter_.makeFilter() ]);
+      return arr.concat([ defaultSubFilter.makeFilter() ]);
     }
     else if (v.delete_) {
       arr = arr.filter(function(w) { return w !== v.delete_; });
-      return arr.length === 0 ? [ this_.subFilter_.makeFilter() ] : arr;
+      return arr.length === 0 ? [ defaultSubFilter.makeFilter() ] : arr;
     }
     else {
       return arr;
@@ -112,14 +102,19 @@ filter.And.prototype.makeFilter = function(inits) {
   var fn_and = function() {
     var args = Array.prototype.slice.call(arguments);
     return function(obj) {
-      return args.every(function(f) { return f(obj); });
+      if (isAnd) {
+        return args.every(function(f) { return f(obj); });
+      }
+      else {
+        return args.some(function(f) { return f(obj); });
+      }
     };
   };
   var filter = arr.liftB(function(arr_v) {
     return F.liftB.apply(null, [fn_and].concat(arr_v.map(function(f) {
       return f.disabled.liftB(function(disabledV) {
         if (disabledV) {
-          return F.constantB(function() { return true; });
+          return F.constantB(function() { return isAnd; });
         }
         else {
           return f.fn;
@@ -137,7 +132,7 @@ filter.And.prototype.makeFilter = function(inits) {
     if (!disabledV) { edit.sendEvent('new'); } });
 
   var serFn = F.constantB(function(var_args) {
-    return { t: 'And', a: F.mkArray(arguments) };
+    return { t: isAnd ? 'And' : 'Or', a: F.mkArray(arguments) };
   });
   var ser = arr.liftB(function(arrV) {
     return serFn.ap.apply(serFn, arrV.map(function(v) { return v.ser; }));
@@ -146,10 +141,30 @@ filter.And.prototype.makeFilter = function(inits) {
   return {
     fn: filter,
     elt: DIV({ className: 'filterPanel' }, 
-             DIV(DIV('and'), DIV({ className: 'lbracket' }, elt))),
+             DIV(DIV(isAnd ? 'and' : 'or'), 
+             DIV({ className: 'lbracket' }, elt))),
     disabled: disabled,
     ser: ser
   };
+};
+
+/**
+ * @constructor
+ * @extends {filter.Nil}
+ * @param {filter.Nil} subFilter
+ */
+filter.And = function(subFilter) {
+  this.subFilter_ = subFilter;
+  this.friendly = "And " + subFilter.friendly;
+};
+goog.inherits(filter.And, filter.Nil);
+
+/**
+ * @param {Array.<filter.Nil>=} inits
+ * @return {Cols.Filter}
+ */
+filter.And.prototype.makeFilter = function(inits) {
+  return filter.genericMakeFilter(this.subFilter_, true, inits);
 };
 
 /**
@@ -168,73 +183,7 @@ goog.inherits(filter.Or, filter.Nil);
  * @return {Cols.Filter}
  */
 filter.Or.prototype.makeFilter = function(inits) {
-  var edit = F.receiverE();
-  var this_ = this;
-
-  var init = inits ? inits : [ this.subFilter_.makeFilter() ];
-  var arr = edit.collectE(init, function(v, arr) {
-    if (v === 'new') {
-      return arr.concat([ this_.subFilter_.makeFilter() ]);
-    }
-    else if (v.delete_) {
-      arr = arr.filter(function(w) { return w !== v.delete_; });
-      return arr.length === 0 ? [ this_.subFilter_.makeFilter() ] : arr;
-    }
-    else {
-      return arr;
-    }
-  }).startsWith(init);
-
-  
-  var elt = DIV({}, arr.liftB(function(arrV) {  
-    var fn = function() { return Array.prototype.slice.call(arguments); };
-    var la = [fn].concat(arrV.map(function(v) { 
-      var del = A({ href: '#', className: 'buttonLink' }, '⊗');
-      F.$E(del, 'click').mapE(function(_) { edit.sendEvent({ delete_: v }); });
-      return DIV({ className: 'filterPanel' }, DIV(DIV(del), DIV(v.elt))); }));
-    return F.liftB.apply(null, la);
-  }).switchB());
-
-  var fn_and = function() {
-    var args = Array.prototype.slice.call(arguments);
-    return function(obj) {
-      return args.some(function(f) { return f(obj); });
-    };
-  };
-  var filter = arr.liftB(function(arr_v) {
-    return F.liftB.apply(null, [fn_and].concat(arr_v.map(function(f) { 
-      return f.disabled.liftB(function(disabledV) {
-        if (disabledV) {
-          return F.constantB(function() { return false; });
-        }
-        else {
-          return f.fn;
-        }
-      }).switchB();
-    })));
-   }).switchB();
-
-  var disabled = arr.liftB(function(arrV) {
-    return arrV[arrV.length - 1].disabled;
-  }).switchB();
-
-  disabled.changes().mapE(function(disabledV) {
-    if (!disabledV) { edit.sendEvent('new'); } });
-  
-  var serFn = F.constantB(function(var_args) {
-    return { t: 'Or', a: F.mkArray(arguments) };
-  });
-  var ser = arr.liftB(function(arrV) {
-    return serFn.ap.apply(serFn, arrV.map(function(v) { return v.ser; }));
-  }).switchB();
-  
-  return {
-    fn: filter,
-    elt: DIV({ className: 'filterPanel' }, 
-             DIV(DIV('or'), DIV({ className: 'lbracket' }, elt))),
-    disabled: disabled,
-    ser: ser
-  };
+  return filter.genericMakeFilter(this.subFilter_, false, inits);
 };
 
 /**
