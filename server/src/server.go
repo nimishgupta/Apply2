@@ -199,14 +199,12 @@ func delHighlightHandler(key string, w http.ResponseWriter, r *http.Request) {
     r.Close = true
     return
   }
-  now, _, _ := os.Time()
-  hl := &model.Highlight{arg.AppId, arg.ReviewerId, arg.ReviewerId,             
-    arg.ReviewerName, float64(now)}
-  err = dept.DelHighlight(hl)
+  err = dept.DelHighlight(arg.AppId, string(arg.ReviewerId))
   if err != nil {
     w.WriteHeader(http.StatusBadRequest)
     r.Close = true
-    log.Printf("%v ERROR DelHighlight(%v): %v", r.RemoteAddr, hl, err)
+    log.Printf("%v ERROR DelHighlight(%v, %v): %v", r.RemoteAddr, arg.AppId,
+               arg.ReviewerId, err)
     return
   }
   w.WriteHeader(200)

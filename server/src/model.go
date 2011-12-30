@@ -91,6 +91,17 @@ type CommentRow struct {
 type CommentsResult struct {
   Rows []CommentRow `json:"rows"`
 }
+  
+type HighlightsByAppResult struct {
+  Rows []struct {
+    Key string `json:"key"`
+    Value struct {
+      Id string `json:"_id"`
+      Rev string `json:"_rev"`
+      ReaderId string `json:"readerId"`
+    } `json:"value"`
+  } `json:"rows"` 
+}
 
 func (self *Dept)databases() []*db.Database {
   return ([...]*db.Database{ self.appDB, self.reviewerDB, self.commentsDB,
@@ -135,7 +146,7 @@ func NewDept(host string, port string, prefix string) (dept *Dept, err os.Error)
         "map": `function(doc) { emit(doc.readerId, doc.appId); }`,
       },
       "byApp": map[string]interface{} {
-        "map": `function(doc) { emit(doc.appId, doc.readerId); }`,
+        "map": `function(doc) { emit(doc.appId, { _rev: doc._rev, _id: doc._id, readerId: doc.readerId }); }`,
       },
     },
   }
@@ -312,15 +323,24 @@ func (self *Dept) SetHighlight(hl *Highlight) os.Error {
   return err
 }
 
-func (self *Dept) DelHighlight(hl *Highlight) os.Error {
-  _id := fmt.Sprintf("%s-%s-%s", hl.ApplicationId, 
-    string(hl.ReaderId), string(hl.WriterId))
-  var val interface{}
-  _rev, err := self.highlightsDB.Retrieve(_id, &val)
+func (self *Dept) DelHighlight(appId, readerId string) os.Error {
+  var r HighlightsByAppResult
+  err := self.highlightsDB.Query("_design/myviews/_view/byApp", nil, &r)
   if err != nil {
     return err
   }
-  return self.highlightsDB.Delete(_id, _rev)
+  for _, row := range r.Rows {
+    if row.Value.ReaderId == readerId {
+      // Ignore failures. They may occur due to concurrent update, but that's
+      // okay.
+      err := self.highlightsDB.Delete(row.Value.Id, row.Value.Rev)
+      if err != nil {
+        log.Printf("ERROR highlightsDB.Delete(%v, %v) : %v", row.Value.Id,
+                   row.Value.Rev, err)
+      }
+    }
+  }
+  return nil
 }
 
 func query(d *db.Database, view string, key string) ([]map[string]interface{}, 
@@ -362,9 +382,16 @@ func (self *Dept) GetHighlights(readerId ReviewerId) ([]string, os.Error) {
 }
 
 func (self *Dept) HighlightsByApp(appId string) ([]string, os.Error) {
-  r, err := getCouchViewValues(self.highlightsDB, "_design/myviews/_view/byApp",
-    appId)
-  return r, err
+  var r HighlightsByAppResult
+  err := self.highlightsDB.Query("_design/myviews/_view/byApp", nil, &r)
+  if err != nil {
+    return nil, err
+  }
+  arr := make([]string, len(r.Rows))
+  for i, row := range r.Rows {
+    arr[i] = row.Value.ReaderId
+  }
+  return arr, nil
 }
 
 func (self *Dept) GetReviewerIdMap() (map[string]string, os.Error) {

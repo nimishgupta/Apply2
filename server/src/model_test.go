@@ -211,9 +211,13 @@ func TestHighlighting(t *testing.T) {
     t.Fatalf("expected highlight by rev2, got %v", lst[0])
   }
 
-  err = d.DelHighlight(hl)
+  err = d.DelHighlight(hl.ApplicationId, string(hl.ReaderId))
   if err != nil {
     t.Fatalf("DelHighlight error: %v", err)
+  }
+  lst, _ = d.HighlightsByApp("1")
+  if len(lst) != 0 {
+    t.Fatalf("expected zero highlights after DelHighlight, got %v", lst)
   }
 }
 
