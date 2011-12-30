@@ -60,10 +60,10 @@ goog.inherits(filter.Not, filter.Nil);
 filter.Not.prototype.makeFilter = function(init) {
   var sub = init ? init : this.subFilter_.makeFilter();
   return {
-    fn: sub.filter.liftB(function(f) { return function(x) { return !f(x); }; }),
+    fn: sub.fn.liftB(function(f) { return function(x) { return !f(x); }; }),
     elt: DIV({ className: 'filterPanel' }, 'not', sub.elt),
     disabled: sub.disabled,
-    ser: sub.liftB(function(sub) { return { t: 'not', v: sub } })
+    ser: sub.ser.liftB(function(sub) { return { t: 'not', v: sub } })
   };
 };
 
