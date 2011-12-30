@@ -376,13 +376,15 @@ Cols.StarCol.prototype.display = function(val) {
  * @extends{Cols.TextCol}
  * @param {string} label
  * @param {string} friendly
- * @param {!Object} reviewers
+ * @param {!Object.<string,string>} reviewers
+ * @param {string} myRevId
  * @param {boolean} initVis
  */
-Cols.ScoreCol = function(label, friendly, reviewers, initVis) {
+Cols.ScoreCol = function(label, friendly, reviewers, myRevId, initVis) {
   this.label_ = label;
   this.friendly = friendly;
   this.reviewers_ = reviewers;
+  this.myRevId_ = myRevId;
   this.initVis = initVis;
 }
 goog.inherits(Cols.ScoreCol, Cols.TextCol);
@@ -404,3 +406,49 @@ Cols.ScoreCol.prototype.display = function(val) {
 };
 
 // TODO: sorting and filtering on scores
+/**
+ * @param {{min: string, max: string, rev: string}=} init
+ */
+Cols.ScoreCol.prototype.makeFilter = function(init) {
+  var this_ = this;
+  var label = this.label_;
+
+  var min = INPUT({ type: 'text', placeholder: 'min',
+                    value: init ? init.min : ''  });
+  var max = INPUT({ type: 'text', placeholder: 'max',
+                    value: init ? init.max : ''  });
+  var initRev = init ? init.rev : this_.myRevId_;
+  var rev = SELECT(Object.keys(this.reviewers_).map(function(id) {
+    var s = id === initRev ? 'selected' : '';
+    return OPTION({ value: id, selected: s }, this_.reviewers_[id]); 
+  }));
+  var minB = F.$B(min);
+  var maxB = F.$B(max);
+  var revB = F.$B(rev);
+  var fn = F.liftB(function(minV, maxV, revV) {
+    minV = parseFloat(minV);
+    maxV = parseFloat(maxV);
+    return function(obj) { 
+      if (obj[this_.label_] === undefined) {
+        return false;
+      }
+      var score = obj[this_.label_][revV];
+      if (score === undefined) {
+        return false;
+      }
+      var passesMin = isNaN(minV) || score  >= minV;
+      var passesMax = isNaN(maxV) || score <= maxV;
+      return passesMin && passesMax;
+    };
+  }, minB, maxB, revB);
+  var ser = F.liftB(function(minV, maxV, revV) {
+    return { t: 'Num', v: { min: minV, max: maxV, rev: revV } };
+  }, minB, maxB, revB);
+  var elt = DIV(this.friendly, ': [', min, ', ', max, '] by ', rev);
+  return { 
+    fn: fn, 
+    elt: elt,
+    disabled: F.constantB(false),
+    ser: ser
+  };
+};
