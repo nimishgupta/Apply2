@@ -20,6 +20,11 @@
   -moz-box-align: center;
 }
 
+.boxAlignRight {
+  -webkit-box-align: right;
+  -moz-box-align: right;
+}
+
 .vbox  {
   display: -webkit-box;
   display: -moz-box;
@@ -280,4 +285,23 @@ textarea {
 
 .star {
   vertical-align: text-top;
+}
+
+#banner {
+  background-color: #3A1E1A;
+  color: white;
+  margin: -1px;
+}
+
+#banner a {
+  color: white;
+}
+
+#banner div {
+  padding: 5px;
+}
+
+#banner div:first-child {
+  font-family: Palatino, serif;
+  font-size: 12pt;
 }

@@ -12,7 +12,8 @@ var console;
  *  materialsCap: string,
  *  fetchCommentsCap: string,
  *  reviewers: !Object.<string, string>,
- *  revId: string
+ *  revId: string,
+ *  friendlyName: string
  * }}
  */
 var LoginResponse;
@@ -526,11 +527,16 @@ var update = F.receiverE();
  * @param {LoginResponse} loginData
  */
 function loggedIn(urlArgs, loginData) {
+  document.getElementById('friendly').innerText = loginData.friendlyName;
   var reqData = { url: loginData.appsCap, request: 'get', response: 'json' };
   var refresh = F.mergeE(F.oneE(true), update);
   loadData(urlArgs, loginData, 
     F.getWebServiceObjectE(refresh.constantE(reqData)));
 }
+
+document.getElementById('logout').addEventListener('click', function(_) {
+  window.location.reload();
+}, false);
 
 (function() {
   var urlArgs = { app: '' };
