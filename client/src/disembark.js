@@ -129,7 +129,9 @@ function invCompare(f) {
 function headers(fields) {
 
   function h(fld) {
-    var cmp = fld.compare.bind(fld);
+    function cmp(o1, o2) {
+      return fld.compare(o1, o2);
+    }
     var toggle = F.tagRec(['click'], function(clickE) {
       return SPAN({ className: 'buttonLink' },
                  clickE.collectE(true, function(_, b) { return !b; })
