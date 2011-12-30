@@ -313,13 +313,15 @@ Cols.MatsCol.prototype.compare = function(o1, o2) {
 };
 
 /**
+ * @param {string} myId
  * @param {string} label field name
  * @param {string} friendly column name
  * @param {boolean} initVis
  * @constructor
  * @extends {Cols.TextCol}
  */
-Cols.StarCol = function(label, friendly, initVis) {
+Cols.StarCol = function(myId, label, friendly, initVis) {
+  this.myId_ = myId
   this.label_ = label;
   this.friendly = friendly;
   this.initVis = initVis;
@@ -347,8 +349,11 @@ Cols.StarCol.prototype.makeFilter = function(init) {
 };
 
 Cols.StarCol.prototype.display = function(val) {
-  if (val[this.label_].length > 0) {
+  if (val[this.label_].indexOf(this.myId_) !== -1) {
     return IMG({ src: 'star.png', className: 'star', alt: 'Highlighted' });
+  }
+  else if (val[this.label_].length > 0) {
+    return IMG({ src: 'otherstar.png', className: 'star', alt: 'Highlighted' });
   }
   else {
     return DIV();

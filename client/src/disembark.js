@@ -417,7 +417,7 @@ function loadData(urlArgs, loginData, data) {
   /** @type {Array.<Cols.TextCol>} */
   var fields = [
     new Cols.IdCol('embarkId', 'Link', true),
-    new Cols.StarCol('highlight', 'Starred', true),
+    new Cols.StarCol(loginData.revId, 'highlight', 'Starred', true),
     new Cols.TextCol('firstName','First Name', false),
     new Cols.TextCol('lastName', 'Last Name', true),
     new Cols.TextCol('url','Email', false),
