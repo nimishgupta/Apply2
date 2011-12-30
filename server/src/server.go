@@ -141,22 +141,6 @@ func fetchCommentsHandler(key string, w http.ResponseWriter, r *http.Request) {
   log.Printf("%v fetched comments for %v", key, appId);
 }
 
-func getHighlightsHandler(v string, w http.ResponseWriter, r *http.Request) {
-  if r.Method != "GET" {
-    panic("expected GET")
-  }
-
-  readerId := model.ReviewerId(v)
-
-  hls, err := dept.GetHighlights(readerId)
-  if err != nil {
-    panic(err)
-  }
-
-  _ = util.JSONResponse(w, hls)
-  log.Printf("%v fetched own highlights", readerId)
-}
-
 func setHighlightHandler(v string, w http.ResponseWriter, r *http.Request) {
   // TODO: use and enforce PUT
   var arg FetchCommentsEnv
