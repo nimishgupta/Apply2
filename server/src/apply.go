@@ -45,10 +45,10 @@ func main() {
   }
 
   switch os.Args[1] {
-  case "-sample-comments":
+  case "-sample":
     deptName := os.Args[2]
     dept, _ := model.LoadDept("localhost", "5984", deptName)
-    sample.LoadRandomComments(dept)
+    sample.Populate(dept)
   case "-keygen":
     keygen(os.Args[2])
   case "-delete-dept":

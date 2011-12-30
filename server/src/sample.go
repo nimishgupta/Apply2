@@ -12,6 +12,9 @@ import (
 const maxTextLen = 300
 var randTextBuf []byte
 
+var reviewerNames = [...]string{"George Washington", "John Adams", "Thomas Jefferson", "James Buchanan", "James Madison", "Abraham Lincoln", "James Monroe", "Andrew Johnson", "John Quincy Adams", "Ulysses S. Grant", "Andrew Jackson", "Rutherford B. Hayes", "Martin Van Buren", "James Garfield", "William Henry Harrison", "Chester A. Arthur", "John Tyler", "Grover Cleveland", "James K. Polk", "Benjamin Harrison", "Zachary Taylor", "Grover Cleveland", "Millard Fillmore", "William McKinley", "Franklin Pierce", "Theodore Roosevelt", "John F. Kennedy", "William Howard Taft", "Lyndon B. Johnson", "Woodrow Wilson", "Richard M. Nixon", "Warren G. Harding", "Gerald R. Ford", "Calvin Coolidge"}
+
+
 
 func randInt(bound int) int {
   n, _ := rand.Int(rand.Reader, big.NewInt(int64(bound)))
@@ -62,7 +65,7 @@ func LoadRandomComments(dept *model.Dept) {
   revIds := reviewerIds(revs)
 
   for _, app := range(apps) {
-    numComments := randInt(50)
+    numComments := randInt(30)
     for i := 0; i < numComments; i = i + 1 {
       revId := revIds[randInt(len(revIds))]
       revName := revs[revId]
@@ -74,6 +77,25 @@ func LoadRandomComments(dept *model.Dept) {
       }
     }
   }
+}
+
+func CreateSampleReviewers(dept *model.Dept) {
+  pass := "redbull64"
+  for i, name := range reviewerNames {
+    id := model.ReviewerId(fmt.Sprintf("demo%v", i))
+    _, err := dept.NewReviewer(id, name, pass)
+    if err != nil {
+      panic(err)
+    }
+   fmt.Printf("New reviewer username: %v, password: %v\n", id, pass)
+  }
+}
+
+func Populate(dept *model.Dept) {
+  fmt.Printf("Creating reviewers ...")
+  CreateSampleReviewers(dept)
+  fmt.Println("Creating sample comments ...")
+  LoadRandomComments(dept)
 }
 /*
 func Make(prefix string, numApps int) os.Error {
