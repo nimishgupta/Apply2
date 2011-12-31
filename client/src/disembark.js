@@ -640,7 +640,7 @@ function firefoxUI() {
   var at = document.getElementById('ffResizeChildren');
   var ft = document.getElementById('mainPanel').firstElementChild;
 
-  F.$E(window, 'resize').mapE(function(evt) {
+  F.$E(window, 'resize').startsWith(null).liftB(function(evt) {
    var h = (document.body.clientHeight - ft.clientHeight - 50) + 'px';
    at.firstElementChild.style.height = h;
    document.getElementById('commentsPane').style.width =
