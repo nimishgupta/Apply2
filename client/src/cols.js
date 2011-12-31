@@ -45,15 +45,18 @@ Cols.TextCol.prototype.makeFilter = function(init) {
 Cols.TextCol.prototype.compare = function(o1, o2) {
   var v1 = o1[this.label_];
   var v2 = o2[this.label_];
-  // This is not equivalent to v1 - v2. Subtracting strings only produces NaN.
-  if (v1 < v2) {
+  if (typeof v1 === 'string' && typeof v2 === 'string') {
+    v1 = v1.toLowerCase();
+    v2 = v2.toLowerCase();
+  }
+  if (v1 === v2) {
+    return 0;
+  }
+  else if (v1 < v2) {
     return -1;
   }
-  else if (v2 > v1) {
-    return 1;
-  }
   else {
-    return 0;
+    return 1;
   }
 };
 
