@@ -183,9 +183,9 @@ Cols.SetCol.prototype.display = function(val) {
     this_.elems_[v] = true;
   });
   return DIV({ className: 'set' }, 
-      DIV(val[this.label_].map(function(v) {
-        return DIV(String(v));
-      })));
+    val[this.label_].map(function(v) {
+      return DIV(String(v));
+    }));
 };
 
 Cols.SetCol.prototype.makeFilter = function(init) {
@@ -299,8 +299,8 @@ goog.inherits(Cols.MatsCol, Cols.TextCol);
 Cols.MatsCol.prototype.display = function(val) {
   var materialsCap = this.materialsCap_;
   function dispLink(v) {
-    return DIV(DIV(A({ target: '_blank', href: materialsCap + "?" + v.url }, 
-            v.text)));
+    return DIV(A({ target: '_blank', href: materialsCap + "?" + v.url }, 
+            v.text));
   }
 
   function isValidLink(link) {
