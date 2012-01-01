@@ -101,7 +101,6 @@ function displayRow(obj, fields, filter) {
   function mkCell(field) {
     return DIV({ 
       'className': 'cell',
-      'data-appId': obj.embarkId,
       'style': { 'display': disp('table-cell',field.visible) } 
     },
     field.display(obj));
@@ -110,7 +109,8 @@ function displayRow(obj, fields, filter) {
     return pred(obj);
   }));
   return DIV({ className: 'row',
-               style: { display: dispWhen } },
+               'data-appId': obj.embarkId,
+                style: { display: dispWhen } },
              fields.map(mkCell));
 }
 
@@ -162,16 +162,11 @@ function headers(fields) {
 }
 
 /**
- * @param {Event} evt
+ * @param {Node} newRow
  * @param {Node} oldRow
- * @return {Node} newRow
+ * @return {Node}
  */
-function highlightSelectedRow(evt, oldRow) {
-  if (evt.target.className !== 'cell') {
-    return oldRow;
-  }
-
-  var newRow = evt.target.parentNode; // assumes it is row
+function highlightSelectedRow(newRow, oldRow) {
   if (oldRow) {
     oldRow.classList.remove('selected');
   }
@@ -189,7 +184,7 @@ function displayTable(objs, fields, filter) {
   }, objs, head.compare);
 
   var rowGroup = DIV({ style: { display: 'table-row-group' } }, rows);
-  F.clicksE(rowGroup).collectE(null, highlightSelectedRow);
+  selectedRow(rowGroup).collectE(null, highlightSelectedRow);
 
   
   return DIV({ id: 'applicantTable', className: 'table flex1' },
@@ -197,14 +192,31 @@ function displayTable(objs, fields, filter) {
 }
 
 /**
- * Returns the ID of the selected application.
+ * Returns the table row of the selected application.
  *
- * @param {F.EventStream} evt
+ * @param {Node} table
  * @return {F.EventStream}
  */
-function selectedApp(evt) {
-  return evt.mapE(function(evt) { return evt.target["data-appId"]; })
-            .filterE(function(src) { return typeof src === "string"; });
+
+function selectedRow(table) {
+  return F.$E(table, 'click').mapE(function(evt) {
+    var elt = evt.target;
+    // Clicking on a link does not select an application.
+    if (elt.tagName === 'A' || elt.classList.contains('buttonLink')) {
+      return false;
+    }
+    // Lets us click on child nodes of the row.
+    while  (elt !== table) {
+      if (typeof elt['data-appId'] === 'undefined') {
+        elt = elt.parentNode;
+      }
+      else {
+        return elt;
+      }
+    }
+    return false;
+  })
+  .filterE(function(src) { return src !== false; });
 }
 
 /**
@@ -490,8 +502,9 @@ function loadData(urlArgs, loginData, data) {
     var appTable = displayTable(sortedData, fields, tableFilter.fn.calmB(500));
     var selected = 
       F.mergeE(F.oneE(acc.selected.valueNow()),
-               selectedApp(F.$E(appTable, "click")))
-      .filterE(function(v) { return v !== ''; });
+               selectedRow(appTable)
+                 .mapE(function(elt) { return elt['data-appId']; }))
+        .filterE(function(v) { return v !== ''; });
 
     var detail  = 
       displayComments(loginData, loginData.reviewers, loginData.fetchCommentsCap,
@@ -502,9 +515,6 @@ function loadData(urlArgs, loginData, data) {
 
   var v = data.collectE({ selected: F.constantB(urlArgs.app) }, processData);
   F.insertDomE(v.index('appTable'), 'applicantTable');
-  // ID of the selected application
-  //var selected =
-    //selectedApp(F.$E(v.index('appTable').startsWith(null), "click"));
   
   var detail = v.index('detail').switchE();
   F.insertDomE(detail.index('info'), 'infoPane');
