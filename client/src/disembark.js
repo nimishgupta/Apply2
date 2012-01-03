@@ -76,7 +76,7 @@ function relativeDate(unixTime) {
       return "yesterday";
     }
     else {
-      return (new Date(unixTime)).toDateString();
+      return (new Date(unixTime * 1000)).toDateString();
     }
   }
 }
