@@ -33,8 +33,12 @@
         <div style="display: table-cell">
           <input type="submit" id="login" value="Login" />
         </div>
+        <div style="display: table-cell">
+          <a id="forgot" href="#" class="buttonLink">Reset Password</a>
+        </div>
       </div>
     </div>
+  <div id="loginPanelOut"></div>
   </form>
 </div>
 
@@ -85,6 +89,16 @@
 <b><div id="pwStatus"></div></b>
 <input type="button" value="Change Password" id="pwSet">
 <div id="pwBack" class="buttonLink">Back</div>
+
+</div>
+
+<div id="resetPanel" style="display:none; background-color: white">
+
+<div>New password:<input id="pwResetNew1" type="password"/></div>
+<div>Repat password:<input id="pwResetNew2" type="password"/></div>
+<b><div id="pwResetStatus"></div></b>
+<input type="button" value="Change Password" id="pwResetSet">
+<div id="pwResetBack" class="buttonLink">Back</div>
 
 </div>
 

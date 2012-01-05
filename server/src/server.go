@@ -14,6 +14,7 @@ import (
   "io"
   "os"
   "path/filepath"
+  "smtp"
 )
 
 const dataKey = "data"
@@ -24,15 +25,68 @@ const setHighlightKey = "setHighlight"
 const delHighlightKey = "delHighlight"
 const setScoreKey = "setScore"
 const changePasswordKey = "changePassword"
+const resetPasswordKey = "resetPassword"
 
 var capServer caps.CapServer
 var dept *model.Dept
 var deptDocPath *string
+var mailAuth smtp.Auth
 
 type FetchCommentsEnv struct {
   ReviewerName string `json:"n"`
   ReviewerId model.ReviewerId `json:"i"`
   AppId string `json:"a"`
+}
+
+type ResetPasswordEnv struct {
+  ReviewerId model.ReviewerId `json:"n"`
+  Expires int `json:"d"`
+}
+
+func resetPasswordHandler(key string, w http.ResponseWriter, r *http.Request) {
+  var arg ResetPasswordEnv
+  err := util.StringToJSON(key, &arg)
+  if err != nil {
+    log.Printf("FATAL ERROR decoding closure %v in resetPasswordHandler", key)
+    w.WriteHeader(500)
+    r.Close = true
+    return
+  }
+  if r.Method != "POST" {
+    log.Printf("%v SECURITY ERROR %v trying to %v to %v", r.RemoteAddr,
+      arg.ReviewerId, r.Method, r.URL)
+    w.WriteHeader(http.StatusBadRequest)
+    r.Close = true
+    return
+  }
+  now, _, _ := os.Time()
+  if int(now) > arg.Expires {
+    log.Printf("%v ERROR using expired password reset cap. arg=%v",
+      r.RemoteAddr, arg)
+    w.WriteHeader(http.StatusBadRequest)
+    r.Close = true
+    return
+  }
+  var pass struct {
+    NewPassword string `json:"password"`
+  }
+  err = util.JSONBody(r, &pass)
+  if err != nil {
+    log.Printf("%v ERROR decoding request: %v\n", r.RemoteAddr, r)
+    w.WriteHeader(500)
+    r.Close = true
+    return
+  }
+  err = dept.ChangePassword(arg.ReviewerId, pass.NewPassword)
+  if err != nil {
+    w.WriteHeader(http.StatusBadRequest)
+    w.Write(util.StringToBytes(fmt.Sprintf("%v", err)))
+    r.Close = true
+    return
+  }
+  w.WriteHeader(200)
+  w.Write(util.StringToBytes("Password reset"))
+  return
 }
 
 func dataHandler(key string, w http.ResponseWriter, r *http.Request) {
@@ -195,6 +249,48 @@ func delHighlightHandler(key string, w http.ResponseWriter, r *http.Request) {
   w.WriteHeader(200)
 }
 
+// Sends an email to the user with a capability to reset the password.
+func sendPasswordResetEmailHandler(w http.ResponseWriter, r *http.Request) {
+  if r.Method != "POST" {
+    w.WriteHeader(500)
+    r.Close = true
+    return
+  }
+  var cred struct {
+    Username string `json:"username"`
+  }
+  err := util.JSONBody(r, &cred)
+  if err != nil {
+    log.Printf("%v ERROR decoding request: %v\n", r.RemoteAddr, r)
+    w.WriteHeader(500)
+    r.Close = true
+    return
+  }
+  // Do not report "username does not exist" to the client.
+  w.WriteHeader(200)
+  util.JSONResponse(w, map[string]interface{} { "msg": "Check your email" })
+  if !dept.ReviewerExists(model.ReviewerId(cred.Username)) {
+    log.Printf("%v ERROR user %v does not exist", r.RemoteAddr, cred.Username)
+    return
+  }
+  now, _, _ := os.Time()
+  env, _ := util.JSONToString(&ResetPasswordEnv{model.ReviewerId(cred.Username),
+                                                 int(now) + 1000})
+  resetCap := capServer.Grant(resetPasswordKey, env)
+  arg, _ := util.JSONToString(map[string]interface{}{ "resetCap": resetCap })
+  arg = url.QueryEscape(arg)
+  arg = "http://apply2.cs.brown.edu/#" + arg
+  emailBody := 
+    fmt.Sprintf("Subject: Password Reset\n\nTo reset your password, please visit the following link:\n\n%v", arg)
+  err = smtp.SendMail("smtp.gmail.com:587", mailAuth, 
+                "arjun.guha@gmail.com",
+    []string{cred.Username }, util.StringToBytes(emailBody))
+  if err != nil {
+    log.Printf("ERROR sending mail for user %v, err=%v\n", cred.Username, err)
+  }
+}
+
+
 // Authenticates a login request and returns capabilities to initial data.
 func loginHandler(w http.ResponseWriter, r *http.Request) {
   if r.Method != "POST" {
@@ -212,8 +308,9 @@ func loginHandler(w http.ResponseWriter, r *http.Request) {
  
   log.Printf("%v attempt to login", cred.Username)
   rev, err := dept.AuthReviewer(model.ReviewerId(cred.Username), cred.Password)
-  if (err != nil) {
-    panic("invalid password")
+  if err != nil {
+    util.JSONResponse(w, 
+      map[string]interface{}{"msg": "invalid username or password"})
   }
 
   reviewers, err := dept.GetReviewerIdMap()
@@ -311,6 +408,15 @@ func changePasswordHandler(key string, w http.ResponseWriter, r *http.Request) {
   return
 }
 
+func initSMTP(r io.Reader) smtp.Auth {
+  var user, pass, host string
+  _, err := fmt.Fscanf(r, "User: %s\nPass: %s\nHost: %s\n", &user, &pass, &host)
+  if err != nil {
+    panic(err)
+  }
+  return smtp.PlainAuth("", user, pass, host)
+}
+
 func Serve(deptPath string, deptName string) {
   keyFile := deptPath + "/private.key"
   fi, err := os.Lstat(keyFile)
@@ -320,6 +426,12 @@ func Serve(deptPath string, deptName string) {
   if !fi.IsRegular() {
     panic(err)
   }
+
+  f, err := os.Open(deptPath + "/smtp-password")
+  if err != nil {
+    panic(err)
+  }
+  mailAuth = initSMTP(f) 
 
   p := deptPath + "/docs/"
   deptDocPath = &p
@@ -343,9 +455,11 @@ func Serve(deptPath string, deptName string) {
   capServer.HandleFunc(delHighlightKey, delHighlightHandler)
   capServer.HandleFunc(setScoreKey, setScoreHandler)
   capServer.HandleFunc(changePasswordKey, changePasswordHandler)
+  capServer.HandleFunc(resetPasswordKey, resetPasswordHandler)
 
   http.HandleFunc("/caps/", util.ProtectHandler(capServer.CapHandler()))
   http.HandleFunc("/login", util.ProtectHandler(loginHandler))
+  http.HandleFunc("/reset", util.ProtectHandler(sendPasswordResetEmailHandler))
 
   log.Printf("Starting server ...")
 //  http.ListenAndServe(":8080", nil)

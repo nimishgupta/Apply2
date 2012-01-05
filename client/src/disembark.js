@@ -524,7 +524,8 @@ function loadData(urlArgs, loginData, data) {
   F.insertDomE(detail.index('rating'), 'ratingPane');
 };
 
-var loginClicks = F.$E(document.getElementById("login"), 'click');
+var loginClicks = F.clicksE(document.getElementById('login'));
+var resetClicks = F.clicksE(document.getElementById('forgot'));
 
 var canLogin = false;
 
@@ -541,6 +542,56 @@ function mkLogin() {
       password: pass.value
     }
   };
+}
+
+function mkReset() {
+  var user = document.getElementById("username");
+  return {
+    url: '/reset',
+    request: 'post',
+    response: 'json', 
+    fields: {
+      username: user.value
+    }
+  };
+}
+
+/**
+ * @param {string} resetCap
+ */
+function passwordReset(resetCap) {
+  var passwordPanel = document.getElementById('resetPanel');
+  var pwNew1 = document.getElementById('pwResetNew1');
+  var pwNew2 = document.getElementById('pwResetNew2');
+  var pwStatus = document.getElementById('pwResetStatus');
+  var pwSet = document.getElementById('pwResetSet');
+  var pwBack = document.getElementById('pwResetBack');
+
+  passwordPanel.style.display = '';
+  document.getElementById('loginPanel').style.display = 'none';
+
+  var new1B = F.$B(pwNew1);
+  var new2B = F.$B(pwNew2);
+  
+  F.$E(pwBack, 'click').mapE(function(_) { window.location.reload(); });
+  var enabled = F.liftB(function(new1, new2) {
+    return new1 === new2 && new1.length > 5 ? '' : 'disabled';
+  }, new1B, new2B);
+
+  F.insertValueB(enabled, pwSet, 'disabled');
+  
+  function mkReq(newPw) {
+      return {
+        url: resetCap,
+        request: 'post',
+        fields: { password: newPw },
+        response: 'plain'
+      };
+  }
+
+  var reqs = F.clicksE(pwSet).snapshotE(F.liftB(mkReq, new1B));
+  F.insertDomB(DIV(F.getWebServiceObjectE(reqs).startsWith('')),
+               'pwResetStatus');
 }
 
 /**
@@ -633,10 +684,23 @@ document.getElementById('logout').addEventListener('click', function(_) {
     delete urlArgs.loginData;
     loggedIn(urlArgs, loginData);
   }
+  else if (urlArgs.resetCap) {
+    passwordReset(urlArgs.resetCap);
+  }
   else {
-    F.getWebServiceObjectE(loginClicks.mapE(mkLogin)).mapE(function(result) {
+    var loginResults = F.getWebServiceObjectE(loginClicks.mapE(mkLogin));
+    var resetResults = F.getWebServiceObjectE(resetClicks.mapE(mkReset));
+
+    loginResults.filterE(function(r) {
+      return typeof r.appsCap !== 'undefined';
+    }).mapE(function(result) {
       loggedIn(urlArgs, result);
     });
+    F.insertDomB(
+      DIV(F.mergeE(loginResults, resetResults)
+            .mapE(function(r) { return r.msg || ''; })
+            .startsWith('')),
+      'loginPanelOut');
   }
 
   document.getElementById('username').focus();
