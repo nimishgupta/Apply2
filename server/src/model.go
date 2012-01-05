@@ -291,6 +291,12 @@ func (self *Dept) AuthReviewer(id ReviewerId, pw string) (*Reviewer, os.Error) {
   return &rev, nil
 }
 
+func (self *Dept) ReviewerExists(id ReviewerId) bool {
+  var rev Reviewer
+  _, err := self.reviewerDB.Retrieve(string(id), &rev)
+  return err == nil
+}
+
 func (self *Dept)ChangePassword(id ReviewerId, pw string) os.Error {
   var user Reviewer
   _rev, err := self.reviewerDB.Retrieve(string(id), &user)
