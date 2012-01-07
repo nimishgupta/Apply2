@@ -286,14 +286,6 @@ function visibility(b) {
 }
 
 function highlightPane(reviewers, highlightedBy, highlightCap) {
-  function mkReq(revId) {
-      return {
-        url: highlightCap,
-        request: 'post',
-        fields: { readerId: revId },
-        response: 'plain'
-      };
-  };
   function revSelect(revId) {
     var hasStar = highlightedBy.indexOf(revId) !== -1;
     var txt = hasStar ? '★ ' + reviewers[revId] : reviewers[revId];
@@ -302,8 +294,11 @@ function highlightPane(reviewers, highlightedBy, highlightCap) {
   var opts = Object.keys(reviewers).map(revSelect);
   var elt = SELECT(opts);
   var btn = INPUT({ type: 'button', value: '★'});
-  F.getWebServiceObjectE(F.clicksE(btn).snapshotE(F.$B(elt)).mapE(mkReq))
-    .mapE(function() { update.sendEvent(true); });
+  F.clicksE(btn).snapshotE(F.$B(elt))
+   .mapE(function(revId) { return { readerId: revId }; })
+   .JSONStringify()
+   .POST(highlightCap)
+   .mapE(function() { update.sendEvent(true); });
   return DIV('Set a star for: ', elt, btn);
 }
 
@@ -335,18 +330,13 @@ function ratingPane(label, init, setScoreCap) {
     var n = Number(v);
     return v === '' || (n >= 0 && n <= 10);
   }
-  function mkReq(v) {
-    return {
-      url: setScoreCap,
-      request: 'post',
-      fields: { label: label, score: v === '' ? null : Number(v) },
-      response: 'plain'
-    };
-  }
-  var input = INPUT({ type: 'text', style: { width: '40px', fontSize: '15pt' },                      value: init, placeholder: 'N/A' });
-  F.getWebServiceObjectE(
-      F.$B(input).calmB(500).changes().filterE(isValid).mapE(mkReq))
-  .mapE(function() { update.sendEvent(true); });
+  var input = INPUT({ type: 'text', style: { width: '40px', fontSize: '15pt' },
+                      value: init, placeholder: 'N/A' });
+  F.$B(input).calmB(500).changes().filterE(isValid)
+   .mapE(function(v) { 
+      return { label: label, score: v === '' ? null : Number(v) }; })
+   .POST(setScoreCap)
+   .mapE(function() { update.sendEvent(true); });
   var elt = DIV({ className: 'vbox' }, 
               DIV({ style: { textAlign: 'center' } }, 'Score'),
               DIV(input));
