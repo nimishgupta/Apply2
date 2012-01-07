@@ -81,6 +81,18 @@ function relativeDate(unixTime) {
   }
 }
 
+/**
+ * @param {string} x
+ * @return {!Node} 
+ */
+function getEltById(x) {
+  var elt = window.document.getElementById(x);
+  if (elt === null) {
+    throw 'element not found';
+  }
+  return elt;
+}
+
 ///////////////////////////////////////////////////////////////////////////////
 
 function disp(visStyle, visible) {
@@ -475,18 +487,18 @@ function loadData(urlArgs, loginData, data) {
   var tableFilter = urlArgs.filter 
     ? filter.deserialize(filt, -1, urlArgs.filter)
     : (new filter.And(filt)).makeFilter();
-  F.clicksE(document.getElementById('copyFilters'))
+  F.clicksE(getEltById('copyFilters'))
     .snapshotE(tableFilter.ser).mapE(function(ser) {
     window.location.hash = escape(JSON.stringify({ filter: ser }));
     });
 
-  F.clicksE(document.getElementById('showHideFilters'))
+  F.clicksE(getEltById('showHideFilters'))
   .collectE(false, function(_, showHide) {
     if (showHide) {
-      document.getElementById('filterDetail').style.display = '';
+      getEltById('filterDetail').style.display = '';
     }
     else {
-      document.getElementById('filterDetail').style.display = 'none';
+      getEltById('filterDetail').style.display = 'none';
     }
     return !showHide;
   });
@@ -494,8 +506,8 @@ function loadData(urlArgs, loginData, data) {
   F.insertDomB(DIV({ id: 'filterPanel' }, tableFilter.elt), 'filterPanel');
   F.insertDomB(DIV({ id: 'visPanel' }, vises), 'vises');
   
-  document.getElementById('loginPanel').style.display = 'none';
-  document.getElementById('mainPanel').style.display = '';
+  getEltById('loginPanel').style.display = 'none';
+  getEltById('mainPanel').style.display = '';
 
   function processData(data, acc) {
     var sortedData = F.constantB(data);
@@ -524,14 +536,14 @@ function loadData(urlArgs, loginData, data) {
   F.insertDomE(detail.index('rating'), 'ratingPane');
 };
 
-var loginClicks = F.clicksE(document.getElementById('login'));
-var resetClicks = F.clicksE(document.getElementById('forgot'));
+var loginClicks = F.clicksE(getEltById('login'));
+var resetClicks = F.clicksE(getEltById('forgot'));
 
 var canLogin = false;
 
 function mkLogin() {
-  var user = document.getElementById("username");
-  var pass = document.getElementById("password");
+  var user = getEltById("username");
+  var pass = getEltById("password");
   myRevId = user.value;
   return {
     url: '/login',
@@ -545,7 +557,7 @@ function mkLogin() {
 }
 
 function mkReset() {
-  var user = document.getElementById("username");
+  var user = getEltById("username");
   return {
     url: '/reset',
     request: 'post',
@@ -560,15 +572,15 @@ function mkReset() {
  * @param {string} resetCap
  */
 function passwordReset(resetCap) {
-  var passwordPanel = document.getElementById('resetPanel');
-  var pwNew1 = document.getElementById('pwResetNew1');
-  var pwNew2 = document.getElementById('pwResetNew2');
-  var pwStatus = document.getElementById('pwResetStatus');
-  var pwSet = document.getElementById('pwResetSet');
-  var pwBack = document.getElementById('pwResetBack');
+  var passwordPanel = getEltById('resetPanel');
+  var pwNew1 = getEltById('pwResetNew1');
+  var pwNew2 = getEltById('pwResetNew2');
+  var pwStatus = getEltById('pwResetStatus');
+  var pwSet = getEltById('pwResetSet');
+  var pwBack = getEltById('pwResetBack');
 
   passwordPanel.style.display = '';
-  document.getElementById('loginPanel').style.display = 'none';
+  getEltById('loginPanel').style.display = 'none';
 
   var new1B = F.$B(pwNew1);
   var new2B = F.$B(pwNew2);
@@ -598,15 +610,15 @@ function passwordReset(resetCap) {
  * @param {LoginResponse} loginData
  */
 function setupPasswordChange(loginData) {
-  var mainPanel = document.getElementById('mainPanel');
-  var passwordPanel = document.getElementById('passwordPanel');
-  var pass = document.getElementById('pass');
-  var pwNew1 = document.getElementById('pwNew1');
-  var pwNew2 = document.getElementById('pwNew2');
-  var pwOld = document.getElementById('pwOld');
-  var pwStatus = document.getElementById('pwStatus');
-  var pwSet = document.getElementById('pwSet');
-  var pwBack = document.getElementById('pwBack');
+  var mainPanel = getEltById('mainPanel');
+  var passwordPanel = getEltById('passwordPanel');
+  var pass = getEltById('pass');
+  var pwNew1 = getEltById('pwNew1');
+  var pwNew2 = getEltById('pwNew2');
+  var pwOld = getEltById('pwOld');
+  var pwStatus = getEltById('pwStatus');
+  var pwSet = getEltById('pwSet');
+  var pwBack = getEltById('pwBack');
 
   var new1B = F.$B(pwNew1);
   var new2B = F.$B(pwNew2);
@@ -651,14 +663,14 @@ var update = F.receiverE();
 function loggedIn(urlArgs, loginData) {
   setupPasswordChange(loginData);
 
-  document.getElementById('friendly').appendChild(TEXT(loginData.friendlyName));
+  getEltById('friendly').appendChild(TEXT(loginData.friendlyName));
   var reqData = { url: loginData.appsCap, request: 'get', response: 'json' };
   var refresh = F.mergeE(F.oneE(true), update);
   loadData(urlArgs, loginData, 
     F.getWebServiceObjectE(refresh.constantE(reqData)));
 }
 
-document.getElementById('logout').addEventListener('click', function(_) {
+getEltById('logout').addEventListener('click', function(_) {
   window.location.reload();
 }, false);
 
@@ -703,7 +715,7 @@ document.getElementById('logout').addEventListener('click', function(_) {
       'loginPanelOut');
   }
 
-  document.getElementById('username').focus();
+  getEltById('username').focus();
 })();
 
 function isFirefox() {
@@ -711,13 +723,13 @@ function isFirefox() {
 }
 
 function firefoxUI() {
-  var at = document.getElementById('ffResizeChildren');
-  var ft = document.getElementById('mainPanel').firstElementChild;
+  var at = getEltById('ffResizeChildren');
+  var ft = getEltById('mainPanel').firstElementChild;
 
   F.$E(window, 'resize').startsWith(null).liftB(function(evt) {
    var h = (document.body.clientHeight - ft.clientHeight - 50) + 'px';
    at.firstElementChild.style.height = h;
-   document.getElementById('commentsPane').style.width =
+   getEltById('commentsPane').style.width =
      (ft.clientWidth / 3 - 30) + 'px';
   });
 }

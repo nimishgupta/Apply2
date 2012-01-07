@@ -16,3 +16,4 @@ debug:
 		--compiler_flags="--debug" \
 		--compiler_flags="--js_output_file=\"www/apply.min.js\"" \
 		--compiler_flags="--warning_level=VERBOSE"
+
