@@ -535,27 +535,7 @@ function mkLogin() {
   var user = getEltById("username");
   var pass = getEltById("password");
   myRevId = user.value;
-  return {
-    url: '/login',
-    request: 'post',
-    response: 'json', 
-    fields: {
-      username: user.value,
-      password: pass.value
-    }
-  };
-}
-
-function mkReset() {
-  var user = getEltById("username");
-  return {
-    url: '/reset',
-    request: 'post',
-    response: 'json', 
-    fields: {
-      username: user.value
-    }
-  };
+  return { username: user.value, password: pass.value };
 }
 
 /**
@@ -690,8 +670,17 @@ getEltById('logout').addEventListener('click', function(_) {
     passwordReset(urlArgs.resetCap);
   }
   else {
-    var loginResults = F.getWebServiceObjectE(loginClicks.mapE(mkLogin));
-    var resetResults = F.getWebServiceObjectE(resetClicks.mapE(mkReset));
+    var loginResults = loginClicks.mapE(mkLogin)
+      .JSONStringify()
+      .POST('/login')
+      .index('response')
+      .JSONParse();
+    var resetResults = resetClicks
+      .mapE(function() { return { username: getEltById('username').value }; })
+      .JSONStringify()
+      .POST('/reset')
+      .index('response')
+      .JSONParse();
 
     loginResults.filterE(function(r) {
       return typeof r.appsCap !== 'undefined';
