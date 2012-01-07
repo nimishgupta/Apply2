@@ -5,3 +5,4 @@ client/www/apply.min.js
 tools/closure-compiler.zip
 tools/closure-compiler
 tools/closure-library
+sample/smtp-password
