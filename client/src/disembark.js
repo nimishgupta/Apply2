@@ -524,6 +524,10 @@ function loadData(urlArgs, loginData, data) {
   F.insertDomE(detail.index('commentCompose'), 'commentCompose');
   F.insertDomE(detail.index('highlights'), 'highlightPane');
   F.insertDomE(detail.index('rating'), 'ratingPane');
+
+  if (isFirefox()) {
+    firefoxUI();
+  }
 };
 
 var loginClicks = F.clicksE(getEltById('login'));
@@ -702,17 +706,20 @@ function isFirefox() {
 }
 
 function firefoxUI() {
-  var at = getEltById('ffResizeChildren');
-  var ft = getEltById('mainPanel').firstElementChild;
+  var filterPanel = getEltById('mainPanel').firstElementChild;
+  var resizeChildren = getEltById('ffResizeChildren');
+  var col3 = getEltById('col3');
 
-  F.$E(window, 'resize').startsWith(null).liftB(function(evt) {
-   var h = (document.body.clientHeight - ft.clientHeight - 50) + 'px';
-   at.firstElementChild.style.height = h;
-   getEltById('commentsPane').style.width =
-     (ft.clientWidth / 3 - 30) + 'px';
+  F.$E(window, 'resize').calmE(1000).startsWith(null).liftB(function(evt) {
+    var elt = resizeChildren.firstElementChild;
+    var h = (document.body.clientHeight - filterPanel.clientHeight - 200)+ 'px';
+    var w = Math.floor(document.body.clientWidth / 3 - 50) + 'px';
+    console.log(h, w);
+    while (elt) {
+      elt.style.height = h;
+      elt = elt.nextElementSibling;
+    }
+   col3.style.width = w;
   });
 }
 
-if (isFirefox()) {
-  firefoxUI();
-}
