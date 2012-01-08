@@ -363,7 +363,7 @@ function infoPane(fields, val) {
 function dispCommentPane(loginData, reviewers, data, fields, comments) {
   var dataById = dataMap(data);
   function fn(arg) {
-    var post = getEltById('postComment');
+    var post = INPUT({ className: 'fill', type: 'button', value: 'Send' });
     var commentDisp = DIV({ className: 'table' },
       arg.comments.map(dispComment(loginData, dataById)));
     F.getWebServiceObjectE(F.clicksE(post).mapE(function(){
@@ -390,7 +390,8 @@ function dispCommentPane(loginData, reviewers, data, fields, comments) {
       rating: DIV({ className: 'hbox boxAlignCenter' },
                   selfStarPane(loginData, arg.highlightCap, 
                     arg.unhighlightCap, arg.highlightedBy), ratings),
-      commentDisp: commentDisp
+      commentDisp: commentDisp,
+      commentPost: post
     };
   }
   return comments.mapE(fn);
@@ -515,6 +516,7 @@ function loadData(urlArgs, loginData, data) {
   var detail = v.index('detail').switchE();
   F.insertDomE(detail.index('info'), 'infoPane');
   F.insertDomE(detail.index('commentDisp'), 'commentDisp');
+  F.insertDomE(detail.index('commentPost'), 'postComment');
   F.insertDomE(detail.index('highlights'), 'highlightPane');
   F.insertDomE(detail.index('rating'), 'ratingPane');
 
