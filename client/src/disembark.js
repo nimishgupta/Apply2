@@ -335,6 +335,7 @@ function ratingPane(label, init, setScoreCap) {
   F.$B(input).calmB(500).changes().filterE(isValid)
    .mapE(function(v) { 
       return { label: label, score: v === '' ? null : Number(v) }; })
+   .JSONStringify()
    .POST(setScoreCap)
    .mapE(function() { update.sendEvent(true); });
   var elt = DIV({ className: 'vbox' }, 
@@ -362,17 +363,11 @@ function infoPane(fields, val) {
 function dispCommentPane(loginData, reviewers, data, fields, comments) {
   var dataById = dataMap(data);
   function fn(arg) {
-    var compose = 
-      TEXTAREA({ id: 'composeTextarea', 
-                 rows: 5, className: 'fill', placeholder: 'Compose Message' });
-    var post = INPUT({ className: 'fill', type: 'button', value: 'Send' });
+    var post = getEltById('postComment');
     var commentDisp = DIV({ className: 'table' },
       arg.comments.map(dispComment(loginData, dataById)));
-    var commentCompose =
-      DIV({className: 'hbox' }, 
-        DIV({ className: 'flex1' }, DIV({ className: 'ctrl' }, compose)),
-        DIV(post));
-    F.getWebServiceObjectE(F.clicksE(post).mapE(function() {
+    F.getWebServiceObjectE(F.clicksE(post).mapE(function(){
+      var compose = getEltById('composeTextarea');
       var c = compose.value;
       compose.value = '';
       commentDisp.appendChild(
@@ -395,8 +390,7 @@ function dispCommentPane(loginData, reviewers, data, fields, comments) {
       rating: DIV({ className: 'hbox boxAlignCenter' },
                   selfStarPane(loginData, arg.highlightCap, 
                     arg.unhighlightCap, arg.highlightedBy), ratings),
-      commentDisp: commentDisp,
-      commentCompose: commentCompose
+      commentDisp: commentDisp
     };
   }
   return comments.mapE(fn);
@@ -521,7 +515,6 @@ function loadData(urlArgs, loginData, data) {
   var detail = v.index('detail').switchE();
   F.insertDomE(detail.index('info'), 'infoPane');
   F.insertDomE(detail.index('commentDisp'), 'commentDisp');
-  F.insertDomE(detail.index('commentCompose'), 'commentCompose');
   F.insertDomE(detail.index('highlights'), 'highlightPane');
   F.insertDomE(detail.index('rating'), 'ratingPane');
 
@@ -702,7 +695,7 @@ getEltById('logout').addEventListener('click', function(_) {
 })();
 
 function isFirefox() {
-  return navigator.userAgent.match('Gecko') !== null;
+  return navigator.userAgent.match('Firefox') !== null;
 }
 
 function firefoxUI() {
@@ -714,7 +707,6 @@ function firefoxUI() {
     var elt = resizeChildren.firstElementChild;
     var h = (document.body.clientHeight - filterPanel.clientHeight - 200)+ 'px';
     var w = Math.floor(document.body.clientWidth / 3 - 50) + 'px';
-    console.log(h, w);
     while (elt) {
       elt.style.height = h;
       elt = elt.nextElementSibling;
