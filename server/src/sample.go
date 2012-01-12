@@ -11,6 +11,7 @@ import (
 
 const maxTextLen = 300
 var randTextBuf []byte
+const expectedScoresPerApp = 5
 
 var reviewerNames = [...]string{"George Washington", "John Adams", "Thomas Jefferson", "James Buchanan", "James Madison", "Abraham Lincoln", "James Monroe", "Andrew Johnson", "John Quincy Adams", "Ulysses S. Grant", "Andrew Jackson", "Rutherford B. Hayes", "Martin Van Buren", "James Garfield", "William Henry Harrison", "Chester A. Arthur", "John Tyler", "Grover Cleveland", "James K. Polk", "Benjamin Harrison", "Zachary Taylor", "Grover Cleveland", "Millard Fillmore", "William McKinley", "Franklin Pierce", "Theodore Roosevelt", "John F. Kennedy", "William Howard Taft", "Lyndon B. Johnson", "Woodrow Wilson", "Richard M. Nixon", "Warren G. Harding", "Gerald R. Ford", "Calvin Coolidge"}
 
@@ -119,7 +120,26 @@ func CreateSampleHighlights(dept *model.Dept) {
       }
     }
   }
+}
 
+func CreateSampleScores(dept *model.Dept) {
+  apps, _ := dept.Applications("0")
+  revs, _ := dept.GetReviewerIdMap()
+  Pinv := len(revs) / expectedScoresPerApp
+  for _, app := range apps {
+    for readerId, _ := range revs {
+      if randInt(Pinv) != 0 {
+        continue
+      }
+      s := randInt(11)
+      score := &model.Score{app["embarkId"].(string),
+                            model.ReviewerId(readerId), "rating", &s}
+      err := dept.SetScore(score) 
+      if err != nil {
+        panic(err)
+      }
+    }
+  }
 }
 
 func Populate(dept *model.Dept) {
@@ -129,6 +149,8 @@ func Populate(dept *model.Dept) {
   LoadRandomComments(dept)
   fmt.Println("Creating sample highlights ...")
   CreateSampleHighlights(dept)
+  fmt.Println("Creating sample scores ...")
+  CreateSampleScores(dept)
 }
 
 /*
