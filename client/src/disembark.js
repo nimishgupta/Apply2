@@ -444,7 +444,7 @@ function loadData(urlArgs, loginData, data) {
     new Cols.EnumCol('country', 'Citizen', true),
     new Cols.SetCol('areas', 'Areas', true),
     new Cols.MatsCol('materials','Materials', loginData.materialsCap, true),
-    new Cols.MatsCol('recommendations', 'Recommendations', 
+    new Cols.MatsCol('recs', 'Recommendations', 
                      loginData.materialsCap, true),
     new Cols.NumCol('expectedRecCount', 'Recs Expected', false),
     new Cols.NumCol('GPA', 'GPA', false),
