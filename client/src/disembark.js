@@ -451,7 +451,8 @@ function loadData(urlArgs, loginData, data) {
     new Cols.NumCol('GREMath', 'GRE Math', false),
     new Cols.NumCol('GREVerbal', 'GRE Verbal', false),
     new Cols.ScoreCol('score_rating', 'Ratings', loginData.reviewers, 
-                      loginData.revId, false)
+                      loginData.revId, false),
+    new Cols.NumCol('avgscore_rating', 'Average Rating', false)
   ];
   
   var vises = fields.map(function(f) {

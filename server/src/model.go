@@ -38,7 +38,7 @@ type Application struct {
   Country *string `json:"country"`
   Areas *[]string `json:"areas"`
   Materials []URL `json:"materials"`
-  Recs []URL `json:"recommendations"`
+  Recs []URL `json:"recs"`
   ExpectedRecs *int `json:"expectedRecCount"`
 }
 
@@ -155,6 +155,29 @@ func NewDept(host string, port string, prefix string) (dept *Dept, err os.Error)
     return nil, err
   }
 
+  const averagesMap = `function(doc) {
+    var r = { };
+    r[doc.label] = { sum: doc.score, len: 1, avg: doc.score };
+    emit(doc.appId, r);
+  }`
+  const averagesReduce = `function (key, values, rereduce) {
+    var r = { };
+    for (var i = 0; i < values.length; i++) {
+      for (var label in values[i]) {
+        if (!values[i].hasOwnProperty(label)) {
+          continue;
+        }
+        if (!r.hasOwnProperty(label)) {
+          r[label] = { sum: 0, len: 0 };
+        }
+        r[label].sum += values[i][label].sum;
+        r[label].len += values[i][label].len;
+        r[label].avg = r[label].sum / r[label].len;
+      }
+    }
+    return r;
+  }`
+
   scoresDB, err := db.NewDatabase(host, port, prefix + scoresSuffix)
   if err != nil {
     return nil, err
@@ -165,6 +188,10 @@ func NewDept(host string, port string, prefix string) (dept *Dept, err os.Error)
     "views": map[string]interface{} {
       "byId": map[string]interface{} {
         "map": `function(doc) { emit(doc._id, doc); }`,
+      },
+      "averages": map[string]interface{} {
+        "map": averagesMap,
+        "reduce": averagesReduce,
       },
     },
   }
@@ -228,7 +255,20 @@ func (self *Dept) Applications(revId string) ([]map[string]interface{},
   if err != nil {
     return nil, err
   }
-
+  var avgs struct {
+    Rows []struct { 
+      Key string
+      Value map[string]struct {
+        Avg float64
+      } 
+    }
+  }
+  err = self.scoresDB.Query("_design/myviews/_view/averages",
+    map[string]interface{}{ "group": true }, &avgs);
+  if err != nil {
+    return nil, err
+  }
+  
   appMap := make(map[string]map[string]interface{}, 
     int(apps["total_rows"].(float64)))
   for _, row := range apps["rows"].([]interface{}) {
@@ -254,6 +294,12 @@ func (self *Dept) Applications(revId string) ([]map[string]interface{},
     prev := appMap[row.Value.AppId]["highlight"].([]string)
     appMap[row.Value.AppId]["highlight"] = append(prev, row.Value.WriterId)
   }
+  for _, row := range avgs.Rows {
+    for label, value := range row.Value {
+      appMap[row.Key]["avgscore_" + label] = value.Avg
+    }
+  }
+  
   i := 0
   result := make([]map[string]interface{}, len(appMap))
   for _, app := range appMap {
