@@ -267,16 +267,16 @@ Cols.NumCol.prototype.makeFilter = function(init) {
 };
 
 Cols.NumCol.prototype.display = function(obj) {
-  var val = obj[this.label_];
-  if (typeof val === 'number') {
-    return DIV({ className: 'num' }, String(val));
-  }
-  else if (val === null) {
+  if (!obj.hasOwnProperty(this.label_)) {
     return SPAN({ className: 'err' }, 'Missing');
   }
-  else {
-    return SPAN({ className: 'err' }, 'NaN');
+  var val = obj[this.label_];
+  if (typeof val !== 'number') {
+    return SPAN({ className: 'err' }, 'Unexpected value');
   }
+  // TODO: do this numerically?
+  var truncTwo = '[0-9]+(\\.[0-9]{0,2})?';
+  return DIV({ className: 'num' }, String(val).match(truncTwo)[0]);
 };
 
 /**
