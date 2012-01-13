@@ -211,7 +211,7 @@ function displayTable(objs, fields, filter) {
  */
 
 function selectedRow(table) {
-  return F.$E(table, 'click').mapE(function(evt) {
+  return F.extractEventE(table, 'click').mapE(function(evt) {
     var elt = evt.target;
     // Clicking on a link does not select an application.
     if (elt.tagName === 'A' || elt.classList.contains('buttonLink')) {
@@ -554,7 +554,7 @@ function passwordReset(resetCap) {
   var new1B = F.$B(pwNew1);
   var new2B = F.$B(pwNew2);
   
-  F.$E(pwBack, 'click').mapE(function(_) { window.location.reload(); });
+  F.extractEventE(pwBack, 'click').mapE(function(_) { window.location.reload(); });
   var enabled = F.liftB(function(new1, new2) {
     return new1 === new2 && new1.length > 5 ? '' : 'disabled';
   }, new1B, new2B);
@@ -593,11 +593,11 @@ function setupPasswordChange(loginData) {
   var new2B = F.$B(pwNew2);
   var oldB = F.$B(pwOld);
   
-  F.$E(pass, 'click').mapE(function(_) {
+  F.extractEventE(pass, 'click').mapE(function(_) {
     mainPanel.style.display = 'none';
     passwordPanel.style.display = '';
   });
-  F.$E(pwBack, 'click').mapE(function(_) {
+  F.extractEventE(pwBack, 'click').mapE(function(_) {
     mainPanel.style.display = '';
     passwordPanel.style.display = 'none';
     pwNew1.value = pwNew2.value = pwOld.value = '';
@@ -705,7 +705,7 @@ function firefoxUI() {
   var resizeChildren = getEltById('ffResizeChildren');
   var col3 = getEltById('col3');
 
-  F.$E(window, 'resize').calmE(1000).startsWith(null).liftB(function(evt) {
+  F.extractEventE(window, 'resize').calmE(1000).startsWith(null).liftB(function(evt) {
     var elt = resizeChildren.firstElementChild;
     var h = (document.body.clientHeight - filterPanel.clientHeight - 200)+ 'px';
     var w = Math.floor(document.body.clientWidth / 3 - 50) + 'px';

@@ -95,7 +95,7 @@ filter.genericMakeFilter = function(defaultSubFilter, isAnd, inits) {
     var fn = function() { return Array.prototype.slice.call(arguments); };
     var la = [fn].concat(arrV.map(function(v) { 
       var del = A({ href: '#', className: 'buttonLink' }, '⊗');
-      F.$E(del, 'click').mapE(function(_) { edit.sendEvent({ delete_: v }); });
+      F.extractEventE(del, 'click').mapE(function(_) { edit.sendEvent({ delete_: v }); });
       return DIV({ className: 'filterPanel' }, DIV(DIV(del), DIV(v.elt))); }));
     return F.liftB.apply(null, la);
   }).switchB());

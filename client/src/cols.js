@@ -96,7 +96,7 @@ goog.inherits(Cols.IdCol, Cols.TextCol);
 Cols.IdCol.prototype.display = function(obj) {
   var val = obj[this.label_];
   var link = DIV({ className: 'buttonLink' }, val);
-  F.$E(link, 'click').mapE(function() {
+  F.extractEventE(link, 'click').mapE(function() {
     var compose = document.getElementById('composeTextarea');
     if (compose) {
       compose.value = compose.value + ' #' + val + '; ';
