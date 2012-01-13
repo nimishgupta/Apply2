@@ -43,6 +43,17 @@ Cols.TextCol.prototype.makeFilter = function(init) {
  * @return {number}
  */
 Cols.TextCol.prototype.compare = function(o1, o2) {
+  var o1Has = o1.hasOwnProperty(this.label_);
+  var o2Has = o2.hasOwnProperty(this.label_);
+  if (!o1Has && o2Has) {
+    return -1;
+  }
+  if (o1Has && !o2Has) {
+    return 1;
+  }
+  if (!o1Has && !o1Has) {
+    return 0;
+  }
   var v1 = o1[this.label_];
   var v2 = o2[this.label_];
   if (typeof v1 === 'string' && typeof v2 === 'string') {
