@@ -125,7 +125,8 @@ func materialHandler(key string, w http.ResponseWriter, r *http.Request) {
   }
 
   log.Printf("%v %v downloaded %v", r.RemoteAddr, key, docName)
-  w.Header().Add("Content-Disposition", "inline; filename = " + docName)
+  w.Header().Add("Content-Disposition", 
+                 fmt.Sprintf("inline; filename = %q", docName))
 
   http.ServeFile(w, r, *deptDocPath + docName)
 }
