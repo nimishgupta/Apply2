@@ -10,6 +10,7 @@ import (
   "strconv"
   "fmt"
   "log"
+  "runtime/debug"
 )
 
 type JSObj map[string](interface { })
@@ -117,7 +118,8 @@ func ProtectHandler(handler http.HandlerFunc) http.HandlerFunc {
     defer func() {
       err := recover()
       if err != nil {
-        log.Printf("%v PANIC url=%v, error=%v", r.RemoteAddr, err, r.RawURL)
+        log.Printf("%v PANIC url=%v, error=%v, stack:\n%v", r.RemoteAddr, err, 
+                   r.RawURL, string(debug.Stack()))
       }
     }()
     handler(w, r)
