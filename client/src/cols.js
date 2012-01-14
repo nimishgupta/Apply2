@@ -29,8 +29,10 @@ Cols.TextCol.prototype.makeFilter = function(init) {
   var text = F.$B(elt);
   var fn = text.liftB(function(search) {
     return function(obj) {
-      if (search === '') { return true; }
-      else { return obj[label].indexOf(search) !== -1; }
+      if (search === '') { 
+        return true;
+      }
+      return obj[label].toLowerCase().indexOf(search.toLowerCase()) !== -1;
     };
   });
   var ser = text.liftB(function(t) { return { t: 'Text', v: t } });
