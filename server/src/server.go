@@ -311,6 +311,7 @@ func loginHandler(w http.ResponseWriter, r *http.Request) {
   if err != nil {
     util.JSONResponse(w, 
       map[string]interface{}{"msg": "invalid username or password"})
+    return
   }
 
   reviewers, err := dept.GetReviewerIdMap()
