@@ -15,6 +15,9 @@ filter.deserialize = function(rec, i, ser) {
     case 'Picker':
       return (new filter.Picker(rec.filters_))
         .makeFilter(filter.deserialize(rec, ser.i, ser.a));
+    case 'not':
+     return (new filter.Not(rec.filters_))
+       .makeFilter(filter.deserialize(rec, i, ser.v));
     case 'neg':
       return false;
     default:
@@ -126,7 +129,11 @@ filter.genericMakeFilter = function(defaultSubFilter, isAnd, inits) {
 
 
   var disabled = arr.liftB(function(arrV) {
-    return arrV[arrV.length - 1].disabled;
+    function isAllDisabled() {
+      return F.mkArray(arguments).every(function(v) { return v; });
+    }
+    var subDisabled = arrV.map(function(v) { return v.disabled; });
+    return F.liftB.apply(null, [isAllDisabled].concat(subDisabled))
   }).switchB();
 
   disabled.changes().mapE(function(disabledV) {
