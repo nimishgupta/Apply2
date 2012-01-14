@@ -186,21 +186,20 @@ function highlightSelectedRow(newRow, oldRow) {
   return newRow;
 }
 
-function displayTable(objs, fields, filter) {
-  var head = headers(fields);
-
+/**
+ * @param {F.Behavior} objs
+ * @param {Array.<Cols.TextCol>} fields
+ * @param {F.Behavior} filter
+ */
+function displayTable(objs, fields, filter, compare) {
   var rows = F.liftB(function(objsV, compareV) {
     return objsV.sort(compareV)
                 .map(function(o) { 
                   return displayRow(o, fields, filter); });
-  }, objs, head.compare);
-
+  }, objs, compare);
   var rowGroup = DIV({ style: { display: 'table-row-group' } }, rows);
   selectedRow(rowGroup).collectE(null, highlightSelectedRow);
-
-  
-  return DIV({ id: 'applicantTable', className: 'table flex1' },
-             head.elt, rowGroup);
+  return rowGroup;
 }
 
 /**
@@ -494,10 +493,13 @@ function loadData(urlArgs, loginData, data) {
   
   getEltById('loginPanel').style.display = 'none';
   getEltById('mainPanel').style.display = '';
+  
+  var headerRow = headers(fields);
 
   function processData(data, acc) {
     var sortedData = F.constantB(data);
-    var appTable = displayTable(sortedData, fields, tableFilter.fn.calmB(500));
+    var appTable = displayTable(sortedData, fields, tableFilter.fn.calmB(500),
+                                headerRow.compare);
     var selected = 
       F.mergeE(F.oneE(acc.selected.valueNow()),
                selectedRow(appTable)
@@ -512,7 +514,11 @@ function loadData(urlArgs, loginData, data) {
   }
 
   var v = data.collectE({ selected: F.constantB(urlArgs.app) }, processData);
-  F.insertDomE(v.index('appTable'), 'applicantTable');
+  F.insertDomB(DIV({ id: 'applicantTable', className: 'table flex1' }, 
+                   headerRow.elt, 
+                   v.index('appTable')
+                    .startsWith(F.elt('div', 'Loading, please wait ...'))),
+               'applicantTable');
   
   var detail = v.index('detail').switchE();
   F.insertDomE(detail.index('info'), 'infoPane');
