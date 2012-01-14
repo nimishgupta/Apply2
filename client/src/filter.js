@@ -133,11 +133,22 @@ filter.genericMakeFilter = function(defaultSubFilter, isAnd, inits) {
       return F.mkArray(arguments).every(function(v) { return v; });
     }
     var subDisabled = arrV.map(function(v) { return v.disabled; });
-    return F.liftB.apply(null, [isAllDisabled].concat(subDisabled))
+    return F.liftB.apply(null, [isAllDisabled].concat(subDisabled));
   }).switchB();
 
-  disabled.changes().mapE(function(disabledV) {
-    if (!disabledV) { edit.sendEvent('new'); } });
+  arr.liftB(function(arrV) {
+    var last = arrV[arrV.length - 1];
+    if (last === undefined) {
+      return F.constantB(false);
+    }
+    return F.liftB(function(lastDisabled, lastSer) {
+      return lastDisabled === false;
+    }, last.disabled, last.ser)
+  }).switchB().liftB(function(needNew) {
+    if (needNew) {
+      edit.sendEvent('new');
+    }
+  });
 
   var serFn = F.constantB(function(var_args) {
     return { t: isAnd ? 'And' : 'Or', a: F.mkArray(arguments) };
