@@ -1,6 +1,9 @@
-FILES=apply.go caps
+GOPATH := $(CURDIR)
+export GOPATH
+
 all:
-	gd src -o apply
+	go build main
 
 test:
-	gd src -test
+	go test caps
+	go test model

@@ -288,8 +288,18 @@ func (self *Dept) Applications(revId string) ([]map[string]interface{},
 		int(apps["total_rows"].(float64)))
 	for _, row := range apps["rows"].([]interface{}) {
 		app := row.(map[string]interface{})
-		appMap[app["id"].(string)] = app["doc"].(map[string]interface{})
-		appMap[app["id"].(string)]["highlight"] = make([]string, 0, 1)
+    id := app["id"].(string)
+		appMap[id] = app["doc"].(map[string]interface{})
+
+    // Workaround bug https://codereview.appspot.com/7196050/    
+    if (len(appMap[id]["recs"].([]interface{})) == 0) {
+      appMap[id]["recs"] = [0]string{}
+    }
+    if (len(appMap[id]["areas"].([]interface{})) == 0) {
+      appMap[id]["areas"] = [0]string{}
+    }
+		
+		appMap[id]["highlight"] = make([]string, 0, 1)
 	}
 	for _, rawRow := range scores["rows"].([]interface{}) {
 		row := rawRow.(map[string]interface{})

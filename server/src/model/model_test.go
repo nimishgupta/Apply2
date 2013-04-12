@@ -14,7 +14,7 @@ const port = "5984"
 
 func testDept(name string, t *testing.T) *Dept {
 	for _, suffix := range dbSuffixes {
-		d := db.Database{host, port, name + suffix}
+		d := db.Database{host, port, name + suffix, nil}
 		if d.Exists() {
 			d.DeleteDatabase()
 		}

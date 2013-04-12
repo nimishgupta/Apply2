@@ -10,7 +10,6 @@ debug:
 		--namespace=apply \
 		--compiler_jar=$(CLOSUREC) \
 		--output_mode=compiled \
-		--compiler_flags="--externs=../tools/json.js" \
 		--compiler_flags="--compilation_level=SIMPLE_OPTIMIZATIONS" \
 		--compiler_flags="--formatting=PRETTY_PRINT" \
 		--compiler_flags="--debug" \

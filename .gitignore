@@ -1,5 +1,6 @@
 *.6
-server/apply
+server/main
+server/pkg
 cs-dept
 client/www/apply.min.js
 tools/closure-compiler.zip

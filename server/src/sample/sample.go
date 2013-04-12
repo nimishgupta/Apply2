@@ -68,6 +68,7 @@ func LoadRandomComments(dept *model.Dept) {
 
 	for _, app := range apps {
 		numComments := randInt(30)
+		fmt.Printf("Creating %v comments for %v...\n", numComments, app["embarkId"])
 		for i := 0; i < numComments; i = i + 1 {
 			revId := revIds[randInt(len(revIds))]
 			revName := revs[revId]
@@ -87,7 +88,8 @@ func CreateSampleReviewers(dept *model.Dept) {
 		id := model.ReviewerId(fmt.Sprintf("demo%v", i))
 		_, err := dept.NewReviewer(id, name, pass)
 		if err != nil {
-			panic(err)
+			fmt.Printf("Could not create reviewer %v: %v\n", name, err)
+			continue
 		}
 		fmt.Printf("New reviewer username: %v, password: %v\n", id, pass)
 	}

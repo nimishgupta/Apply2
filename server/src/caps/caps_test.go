@@ -69,7 +69,7 @@ func TestHandler(t *testing.T) {
 
 	server := httptest.NewServer(cs.CapHandler())
 	defer server.Close()
-	client := &http.Client{nil, nil}
+	client := &http.Client{nil, nil, nil}
 
 	_, err := client.Get(server.URL + "/h1")
 	if err != nil {
