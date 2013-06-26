@@ -285,11 +285,11 @@ func sendPasswordResetEmailHandler(w http.ResponseWriter, r *http.Request) {
 	resetCap := capServer.Grant(resetPasswordKey, env)
 	arg, _ := util.JSONToString(map[string]interface{}{"resetCap": resetCap})
 	arg = url.QueryEscape(arg)
-	arg = "http://apply2.cs.brown.edu/#" + arg
+	arg = "http://apply.cs.umass.edu/#" + arg
 	emailBody :=
 		fmt.Sprintf("Subject: Password Reset\n\nTo reset your password, please visit the following link:\n\n%v", arg)
-	err = smtp.SendMail("smtp.gmail.com:587", mailAuth,
-		"arjun.guha@gmail.com",
+	err = smtp.SendMail("mail.cs.umass.edu:25", nil,
+		"devnull@cs.umass.edu",
 		[]string{cred.Username}, util.StringToBytes(emailBody))
 	if err != nil {
 		log.Printf("ERROR sending mail for user %v, err=%v\n", cred.Username, err)
@@ -432,12 +432,6 @@ func Serve(deptPath string, deptName string) {
 	if !!fi.IsDir() {
 		panic(err)
 	}
-
-	f, err := os.Open(deptPath + "/smtp-password")
-	if err != nil {
-		panic(err)
-	}
-	mailAuth = initSMTP(f)
 
 	p := deptPath + "/docs/"
 	deptDocPath = &p
