@@ -39,8 +39,8 @@ func deleteDept(deptName string) {
 
 func main() {
 
-	if len(os.Args) == 0 {
-		fmt.Printf("expected arguments")
+	if len(os.Args) == 1 {
+		fmt.Printf("expected arguments\n")
 		os.Exit(1)
 	}
 
@@ -88,9 +88,49 @@ func main() {
 				panic(err)
 			}
 		}
+	case "-load-comments":
+		src, err := ioutil.ReadFile(os.Args[2])
+		if err != nil {
+			panic(err)
+		}
+		var comments []model.Comment
+		err = json.Unmarshal(src, &comments)
+		if err != nil {
+			panic(err)
+		}
+		dept, err := model.LoadDept("localhost", "5984", os.Args[3])
+		if err != nil {
+			panic(err)
+		}
+		for _, com := range comments {
+			err = dept.NewComment(&com)
+			if err != nil {
+				panic(err)
+			}
+		}
+	case "-load-scores":
+		src, err := ioutil.ReadFile(os.Args[2])
+		if err != nil {
+			panic(err)
+		}
+		var scores []model.Score
+		err = json.Unmarshal(src, &scores)
+		if err != nil {
+			panic(err)
+		}
+		dept, err := model.LoadDept("localhost", "5984", os.Args[3])
+		if err != nil {
+			panic(err)
+		}
+		for _, sco := range scores {
+			err = dept.SetScore(&sco)
+			if err != nil {
+				panic(err)
+			}
+		}
 	case "-serve":
 		server.Serve(os.Args[2], os.Args[3])
 	default:
-		fmt.Printf("unrecognized argument")
+		fmt.Printf("unrecognized argument\n")
 	}
 }
