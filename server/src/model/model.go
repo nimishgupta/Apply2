@@ -8,6 +8,7 @@ import (
 	"util"
 )
 import db "code.google.com/p/couch-go"
+import ldap "github.com/tonnerre/go-ldap"
 
 const applicationsSuffix = "_applications"
 const reviewersSuffix = "_reviewers"
@@ -355,7 +356,18 @@ func (self *Dept) AuthReviewer(id ReviewerId, pw string) (*Reviewer, error) {
 		log.Printf("AuthReviewer(%v, _) - user does not exist", id)
 		return nil, err
 	}
-	if bytes.Equal(rev.PasswordHash, util.HashString(pw)) == false {
+	// If the password is "" (blank), check against LDAP instead
+	if bytes.Equal(rev.PasswordHash, util.HashString("")) == true {
+		l, err := ldap.DialSSL("tcp", "directory.cs.umass.edu:636")
+		if err != nil {
+			return nil, errors.New("can't connect to ldap server")
+		}
+		err = l.Bind(string(id), pw)
+		if err != nil {
+			return nil, errors.New("invalid password")
+		}
+		l.Close()
+	} else if bytes.Equal(rev.PasswordHash, util.HashString(pw)) == false {
 		log.Printf("AuthReviewer(%v, _) - incorrect password", id)
 		return nil, errors.New("invalid password")
 	}

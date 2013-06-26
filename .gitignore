@@ -1,3 +1,5 @@
+.DS_Store
+*.swp
 *.6
 server/main
 server/pkg
@@ -8,3 +10,4 @@ tools/closure-compiler
 tools/closure-library
 sample/smtp-password
 server/src/code.google.com
+server/src/github.com
