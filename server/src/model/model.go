@@ -360,13 +360,15 @@ func (self *Dept) AuthReviewer(id ReviewerId, pw string) (*Reviewer, error) {
 	if bytes.Equal(rev.PasswordHash, util.HashString("")) == true {
 		l, err := ldap.DialSSL("tcp", "directory.cs.umass.edu:636")
 		if err != nil {
+			log.Printf("AuthReviewer(%v, _) - %v", id, err)
 			return nil, errors.New("can't connect to ldap server")
 		}
-		err = l.Bind(string(id), pw)
+		userdn := fmt.Sprintf("uid=%v,cn=users,dc=cs,dc=umass,dc=edu", id)
+		err = l.Bind(userdn, pw)
 		if err != nil {
+			log.Printf("AuthReviewer(%v, _) - %v", id, err)
 			return nil, errors.New("invalid password")
 		}
-		l.Close()
 	} else if bytes.Equal(rev.PasswordHash, util.HashString(pw)) == false {
 		log.Printf("AuthReviewer(%v, _) - incorrect password", id)
 		return nil, errors.New("invalid password")
