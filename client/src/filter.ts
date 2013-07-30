@@ -1,23 +1,23 @@
-goog.provide('filter');
+import F = module("./flapjax");
 
-filter.deserialize = function(rec, i, ser) {
+export function deserialize(rec, i, ser) {
   switch (ser.t) {
     case 'And':
-      return (new filter.And(rec))
+      return (new And(rec))
         .makeFilter(ser.a.map(function(s) {
-           return filter.deserialize(rec, i, s);
+           return deserialize(rec, i, s);
         }));
     case 'Or':
-      return (new filter.Or(rec))
+      return (new Or(rec))
         .makeFilter(ser.a.map(function(s) {
-           return filter.deserialize(rec, i, s);
+           return deserialize(rec, i, s);
         }));
     case 'Picker':
-      return (new filter.Picker(rec.filters_))
-        .makeFilter(filter.deserialize(rec, ser.i, ser.a));
+      return (new Picker(rec.filters_))
+        .makeFilter(deserialize(rec, ser.i, ser.a));
     case 'not':
-     return (new filter.Not(rec.filters_))
-       .makeFilter(filter.deserialize(rec, i, ser.v));
+     return (new Not(rec.filters_))
+       .makeFilter(deserialize(rec, i, ser.v));
     case 'neg':
       return false;
     default:
@@ -28,7 +28,7 @@ filter.deserialize = function(rec, i, ser) {
 /**
  * @constructor
  */
-filter.Nil = function() {
+export function Nil() {
   this.friendly = "Nil filter";
 }
 
@@ -36,10 +36,10 @@ filter.Nil = function() {
  * @param {*=} init
  * @return {Cols.Filter}
  */
-filter.Nil.prototype.makeFilter = function(init) {
+Nil.prototype.makeFilter = function(init) {
   return {
     fn: F.constantB(function(_) { return true; }),
-    elt: DIV({ className: 'err' }, 'Error: Nil filter selected'),
+    elt: F.DIVSty({ className: 'err' }, [F.TEXT('Error: Nil filter selected')]),
     disabled: F.constantB(true),
     ser: F.constantB({ t: 'nil' })
   };
@@ -47,36 +47,36 @@ filter.Nil.prototype.makeFilter = function(init) {
 
 /**
  * @constructor
- * @extends {filter.Nil}
- * @param {subFilter} filter.Nil
+ * @extends {Nil}
+ * @param {subFilter} Nil
  */
-filter.Not = function(subFilter) {
+export function Not(subFilter) {
   this.subFilter_ = subFilter;
-  this.friendly = "Not " + subFilter.friendly;
+  this.friendly = "Not " + this.subFilter_.friendly;
 };
-goog.inherits(filter.Not, filter.Nil);
+Not.prototype = new Nil();
 
 /**
  * @param {!Cols.Filter=} init
  * @return {!Cols.Filter}
  */
-filter.Not.prototype.makeFilter = function(init) {
+Not.prototype.makeFilter = function(init) {
   var sub = init ? init : this.subFilter_.makeFilter();
   return {
     fn: sub.fn.liftB(function(f) { return function(x) { return !f(x); }; }),
-    elt: DIV({ className: 'filterPanel' }, 'not', sub.elt),
+    elt: F.DIVSty({ className: 'filterPanel' }, [F.TEXT('not'), sub.elt]),
     disabled: sub.disabled,
     ser: sub.ser.liftB(function(sub) { return { t: 'not', v: sub } })
   };
 };
 
 /**
- * @param {filter.Nil} defaultSubFilter
+ * @param {Nil} defaultSubFilter
  * @param {boolean} isAnd
- * @param {Array.<filter.Nil>=} inits
+ * @param {Array.<Nil>=} inits
  * @return {Cols.Filter}
  */
-filter.genericMakeFilter = function(defaultSubFilter, isAnd, inits) {
+function genericMakeFilter(defaultSubFilter, isAnd, inits) {
   var edit = F.receiverE();
 
   // TODO: init is now misnamed, should be empty
@@ -94,12 +94,13 @@ filter.genericMakeFilter = function(defaultSubFilter, isAnd, inits) {
     }
   }).startsWith(init);
 
-  var elt = DIV({}, arr.liftB(function(arrV) {  
+  var elt = F.DIVSty({}, arr.liftB(function(arrV) {  
     var fn = function() { return Array.prototype.slice.call(arguments); };
     var la = [fn].concat(arrV.map(function(v) { 
-      var del = A({ href: '#', className: 'buttonLink' }, '⊗');
+      var del = F.A({ href: '#', className: 'buttonLink' }, F.TEXT('⊗'));
       F.extractEventE(del, 'click').mapE(function(_) { edit.sendEvent({ delete_: v }); });
-      return DIV({ className: 'filterPanel' }, DIV(DIV(del), DIV(v.elt))); }));
+      return F.DIVSty({ className: 'filterPanel' },
+        [F.DIV(F.DIV(del), F.DIV(v.elt))]); }));
     return F.liftB.apply(null, la);
   }).switchB());
 
@@ -128,11 +129,11 @@ filter.genericMakeFilter = function(defaultSubFilter, isAnd, inits) {
    }).switchB();
 
 
-  var disabled = arr.liftB(function(arrV) {
+  var disabled = arr.liftB(function(...args) {
     function isAllDisabled() {
-      return F.mkArray(arguments).every(function(v) { return v; });
+      return args.every(function(v) { return v; });
     }
-    var subDisabled = arrV.map(function(v) { return v.disabled; });
+    var subDisabled = args.map(function(v) { return v.disabled; });
     return F.liftB.apply(null, [isAllDisabled].concat(subDisabled));
   }).switchB();
 
@@ -150,8 +151,8 @@ filter.genericMakeFilter = function(defaultSubFilter, isAnd, inits) {
     }
   });
 
-  var serFn = F.constantB(function(var_args) {
-    return { t: isAnd ? 'And' : 'Or', a: F.mkArray(arguments) };
+  var serFn = F.constantB(function(...args) {
+    return { t: isAnd ? 'And' : 'Or', a: args };
   });
   var ser = arr.liftB(function(arrV) {
     return serFn.ap.apply(serFn, arrV.map(function(v) { return v.ser; }));
@@ -159,9 +160,9 @@ filter.genericMakeFilter = function(defaultSubFilter, isAnd, inits) {
   
   return {
     fn: filter,
-    elt: DIV({ className: 'filterPanel' }, 
-             DIV(DIV(isAnd ? 'and' : 'or'), 
-             DIV({ className: 'lbracket' }, elt))),
+    elt: F.DIVSty({ className: 'filterPanel' }, 
+             [F.DIV(
+              F.DIVSty({ className: 'lbracket' }, [elt]))]),
     disabled: disabled,
     ser: ser
   };
@@ -169,64 +170,64 @@ filter.genericMakeFilter = function(defaultSubFilter, isAnd, inits) {
 
 /**
  * @constructor
- * @extends {filter.Nil}
- * @param {filter.Nil} subFilter
+ * @extends {Nil}
+ * @param {Nil} subFilter
  */
-filter.And = function(subFilter) {
+export function And(subFilter) {
   this.subFilter_ = subFilter;
   this.friendly = "And " + subFilter.friendly;
 };
-goog.inherits(filter.And, filter.Nil);
+And.prototype = new Nil();
 
 /**
- * @param {Array.<filter.Nil>=} inits
+ * @param {Array.<Nil>=} inits
  * @return {Cols.Filter}
  */
-filter.And.prototype.makeFilter = function(inits) {
-  return filter.genericMakeFilter(this.subFilter_, true, inits);
+And.prototype.makeFilter = function(inits) {
+  return genericMakeFilter(this.subFilter_, true, inits);
 };
 
 /**
  * @constructor
- * @extends {filter.Nil}
- * @param {filter.Nil} subFilter
+ * @extends {Nil}
+ * @param {Nil} subFilter
  */
-filter.Or = function(subFilter) {
+export function Or(subFilter) {
   this.subFilter_ = subFilter;
   this.friendly = "Or " + subFilter.friendly;
 };
-goog.inherits(filter.Or, filter.Nil);
+Or.prototype = new Nil();
 
 /**
- * @param {Array.<filter.Nil>=} inits
+ * @param {Array.<Nil>=} inits
  * @return {Cols.Filter}
  */
-filter.Or.prototype.makeFilter = function(inits) {
-  return filter.genericMakeFilter(this.subFilter_, false, inits);
+Or.prototype.makeFilter = function(inits) {
+  return genericMakeFilter(this.subFilter_, false, inits);
 };
 
 /**
  * @constructor
- * @extends {filter.Nil}
- * @param {Array.<filter.Nil>=} filters
+ * @extends {Nil}
+ * @param {Array.<Nil>=} filters
  */
-filter.Picker = function(filters) {
-  this.friendly = "Select ...";
+export function Picker(filters) {
+  this.friendly = "F.SELECT ...";
   this.filters_ = filters;
 };
-goog.inherits(filter.Picker, filter.Nil);
+Picker.prototype = new Nil();
 
 /**
  * @param {Cols.Filter=} init
  * @return {Cols.Filter}
  */
-filter.Picker.prototype.makeFilter = function(init) {
+Picker.prototype.makeFilter = function(init) {
   var filters = this.filters_;
   var ix = 0;
   var opts = this.filters_.map(function(fld) {
-    return OPTION({ value: ix++ }, fld.friendly);
+    return F.OPTION({ value: ix++ }, fld.friendly);
   });
-  var sel = SELECT([OPTION({ value: -1 }, '(select filter)')].concat(opts));
+  var sel = F.SELECTSty({}, [F.OPTION({ value: -1 }, F.TEXT('(select filter)'))].concat(opts));
   var selB = F.$B(sel);
   var selE = selB.changes();
 
@@ -256,7 +257,7 @@ filter.Picker.prototype.makeFilter = function(init) {
     fn: subFilter.mapE(function(v) { return v.fn; })
                      .startsWith(init.fn)
                      .switchB(),
-    elt: DIV(subFilter.mapE(function(v) { return v.elt; })
+    elt: F.DIVSty({}, subFilter.mapE(function(v) { return v.elt; })
                   .startsWith(init.elt)),
     disabled: selE.mapE(function(ix) { return ix === '-1'; })
               .startsWith(init.disabled.valueNow()),

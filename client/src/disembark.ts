@@ -1,44 +1,49 @@
-goog.provide('apply');
-goog.require('Cols');
-goog.require('F');
-goog.require('util');
-goog.require('filter');
+import F = module("./flapjax");
+import filter = module("./filter")
+import Cols = module("./cols");
+import util = module("./util");
 
-var console;
+// TODO(arjun): why needed?
+declare function escape(s : string) : string;
+declare function unescape(s : string) : string;
 
-/**
- * @typedef {{
- *  appsCap: string, 
- *  materialsCap: string,
- *  fetchCommentsCap: string,
- *  changePasswordCap: string,
- *  reviewers: !Object.<string, string>,
- *  revId: string,
- *  friendlyName: string
- * }}
- */
-var LoginResponse;
+// We parse the URL fragment as a JSON string and expect it to optionally
+// contain these members.
+interface URLArgs {
+  app? : string;
+  loginData? : LoginResponse;
+  resetCap? : string
+}
 
-/**
- * @typedef {{
- *   embarkId: number,
- *   lastName: string
- * }}
- */
-var Application;
+interface LoginResponse {
+  appsCap: string;
+  materialsCap: string;
+  fetchCommentsCap: string;
+  changePasswordCap: string;
+  reviewers: { [id : string]: string };
+  revId: string;
+  friendlyName: string
+}
 
-/**
- * @typedef{{ reviewerName: string, timestamp: number, text: string }}
- */
-var AppComment;
+interface Application {
+  embarkId: number;
+  lastName: string;
+}
 
-/**
- * @typedef{{ comments: Array.<AppComment>, post: string, 
- *   highlightCap: string,
- *   unhighlightCap: string,
- *            highlightedBy: Array.<string>, setScoreCap: string }}
- */
-var FetchCapResponse;
+interface AppComment {
+  reviewerName: string;
+  timestamp: number;
+  text: string;
+}
+
+interface FetchCapResponse {
+  comments: Array<AppComment>;
+  post: string;
+  highlightCap: string;
+  unhighlightCap: string;
+  highlightedBy: Array<string>;
+  setScoreCap: string
+}
 
 /**
  * @typedef {Object}
@@ -48,11 +53,7 @@ var Reviewers;
 var myRevId;
 
 
-/**
- * @param {number} unixTime
- * @return {string}
- */
-function relativeDate(unixTime) {
+function relativeDate(unixTime : number) : string {
   var now = Math.floor((new Date()).valueOf() / 1000);
   var delta = now - unixTime; // in seconds
   if (delta < 60) {
@@ -81,11 +82,7 @@ function relativeDate(unixTime) {
   }
 }
 
-/**
- * @param {string} x
- * @return {!Node} 
- */
-function getEltById(x) {
+function getEltById(x : string) : HTMLElement {
   var elt = window.document.getElementById(x);
   if (elt === null) {
     throw 'element not found';
@@ -111,16 +108,16 @@ function displayRow(obj, fields, filter) {
    * @param {Cols.TextCol} field
    */
   function mkCell(field) {
-    return DIV({ 
+    return F.DIVSty({ 
       'className': 'cell',
       'style': { 'display': disp('table-cell',field.visible) } 
     },
-    field.display(obj));
+    [field.display(obj)]);
   }
   var dispWhen = disp('table-row', filter.liftB(function(pred) {
     return pred(obj);
   }));
-  return DIV({ className: 'row',
+  return F.DIVSty({ className: 'row',
                'data-appId': obj.embarkId,
                 style: { display: dispWhen } },
              fields.map(mkCell));
@@ -145,17 +142,17 @@ function headers(fields) {
       return fld.compare(o1, o2);
     }
     var toggle = F.tagRec(['click'], function(clickE) {
-      return SPAN({ className: 'buttonLink' },
-                 clickE.collectE(true, function(_, b) { return !b; })
-                       .mapE(function(b) { return b ? '▲' : '▼'; })
-                       .startsWith('△'));
+      return F.SPANSty({ className: 'buttonLink' },
+                 [F.text(clickE.collectE(true, function(_, b) { return !b; })
+                             .mapE(function(b) { return b ? '▲' : '▼'; })
+                             .startsWith('△'))]);
     });
 
     return {
-      elt: DIV({ className: 'cell',
+      elt: F.DIVSty({ className: 'cell',
                  style: { display: disp('table-cell', fld.visible) }
                },
-              fld.friendly, toggle ? toggle : SPAN()),
+              [F.TEXT(fld.friendly), toggle ? toggle : F.SPAN()]),
       compare: toggle 
                  ? F.clicksE(toggle)
                      .collectE(true, function(_, b) { return !b; })
@@ -167,7 +164,7 @@ function headers(fields) {
   var heads = fields.map(h);
 
   return {
-    elt: DIV({ className: 'row header' }, heads.map(function(h) { return h.elt; })),
+    elt: F.DIVSty({ className: 'row header' }, heads.map(function(h) { return h.elt; })),
     compare: F.mergeE.apply(null, heads.map(function(h) { return h.compare; }))
                    .startsWith(function(_, __) { return 0; })
   }
@@ -197,7 +194,7 @@ function displayTable(objs, fields, filter, compare) {
                 .map(function(o) { 
                   return displayRow(o, fields, filter); });
   }, objs, compare);
-  var rowGroup = DIV({ style: { display: 'table-row-group' } }, rows);
+  var rowGroup = F.DIVSty({ style: { display: 'table-row-group' } }, rows);
   selectedRow(rowGroup).collectE(null, highlightSelectedRow);
   return rowGroup;
 }
@@ -253,8 +250,8 @@ function createLinks(loginData, dataById, comment) {
       // When anchor is copied, it does not have the user's caps. When anchor
       // is clicked, it's invoked with the user's caps and then rewritten back
       // to href.
-      var anchor = A({ href: href, target: '_blank' }, 
-                     dataById[maybeLink].lastName);
+      var anchor = F.A({ href: href, target: '_blank' }, 
+                     F.TEXT(dataById[maybeLink].lastName));
       anchor.addEventListener('click', function() {
         anchor.href = unsafeHref;
         window.setTimeout(function() { anchor.href = href; }, 0);
@@ -272,11 +269,11 @@ function createLinks(loginData, dataById, comment) {
 
 function dispComment(loginData, dataById) {
   return function(comment) {
-    return DIV({ className: 'row' },
-             DIV({ className: 'comment cell' },
-               DIV(comment.reviewerName),
-               DIV(relativeDate(comment.timestamp)),
-               DIV(createLinks(loginData, dataById, comment.text))));
+    return F.DIVClass('row',
+             F.DIVClass('comment cell',
+               F.DIV(comment.reviewerName),
+               F.DIV(F.TEXT(relativeDate(comment.timestamp))),
+               F.DIVSty({}, createLinks(loginData, dataById, comment.text))));
   }
 }
 
@@ -288,17 +285,17 @@ function highlightPane(reviewers, highlightedBy, highlightCap) {
   function revSelect(revId) {
     var hasStar = highlightedBy.indexOf(revId) !== -1;
     var txt = hasStar ? '★ ' + reviewers[revId] : reviewers[revId];
-    return OPTION({ value: revId }, txt);
+    return F.OPTION({ value: revId }, txt);
   }
   var opts = Object.keys(reviewers).map(revSelect);
-  var elt = SELECT(opts);
-  var btn = INPUT({ type: 'button', value: '★'});
+  var elt = F.SELECTSty({}, opts);
+  var btn = F.INPUT({ type: 'button', value: '★'});
   F.clicksE(btn).snapshotE(F.$B(elt))
    .mapE(function(revId) { return { readerId: revId }; })
    .JSONStringify()
    .POST(highlightCap)
    .mapE(function() { update.sendEvent(true); });
-  return DIV('Set a star for: ', elt, btn);
+  return F.DIV(F.TEXT('Set a star for: '), elt, btn);
 }
 
 function selfStarPane(loginData, highlightCap, unhighlightCap, highlightedBy) {
@@ -319,7 +316,7 @@ function selfStarPane(loginData, highlightCap, unhighlightCap, highlightedBy) {
       .collectE(initSrc, function(_, acc) {
         return acc === 'star.png' ? 'unstar.png' : 'star.png' });
     src.mapE(function() { update.sendEvent(true); });
-    return DIV(IMG({ src: src.startsWith(initSrc) }));
+    return F.DIV(F.IMG({ src: src.startsWith(initSrc) }));
   });
 
 }
@@ -329,7 +326,7 @@ function ratingPane(label, init, setScoreCap) {
     var n = Number(v);
     return v === '' || (n >= 0 && n <= 10);
   }
-  var input = INPUT({ type: 'text', style: { width: '40px', fontSize: '15pt' },
+  var input = F.INPUT({ type: 'text', style: { width: '40px', fontSize: '15pt' },
                       value: init, placeholder: 'N/A' });
   F.$B(input).calmB(500).changes().filterE(isValid)
    .mapE(function(v) { 
@@ -337,22 +334,22 @@ function ratingPane(label, init, setScoreCap) {
    .JSONStringify()
    .POST(setScoreCap)
    .mapE(function() { update.sendEvent(true); });
-  var elt = DIV({ className: 'vbox' }, 
-              DIV({ style: { textAlign: 'center' } }, 'Score'),
-              DIV(input));
+  var elt = F.DIVClass('vbox', 
+              F.DIVSty({ style: { textAlign: 'center' } }, [F.TEXT('Score')]),
+              F.DIV(input));
   return elt;
 }
 
 function infoPane(fields, val) {
   function row(field) {
-    return DIV({ className: 'row' },
-      DIV({ className: 'cell' }, field.friendly),
-      DIV({ className: 'cell' }, field.display(val)));
+    return F.DIVSty({ className: 'row' },
+      [F.DIVSty({ className: 'cell' }, [field.friendly]),
+       F.DIVSty({ className: 'cell' }, [field.display(val)])]);
   }
   function notStar(field) {
     return !(field instanceof Cols.StarCol);
   }
-  return DIV({ className: 'vbox table' }, fields.filter(notStar).map(row));
+  return F.DIVClass('vbox table', fields.filter(notStar).map(row));
 }
 
 /**
@@ -362,11 +359,11 @@ function infoPane(fields, val) {
 function dispCommentPane(loginData, reviewers, data, fields, comments) {
   var dataById = dataMap(data);
   function fn(arg) {
-    var post = INPUT({ className: 'fill', type: 'button', value: 'Send' });
-    var commentDisp = DIV({ className: 'table' },
-      arg.comments.map(dispComment(loginData, dataById)));
+    var post = F.INPUT({ className: 'fill', type: 'button', value: 'Send' });
+    var commentDisp = F.DIVSty({ className: 'table' },
+      [arg.comments.map(dispComment(loginData, dataById))]);
     F.getWebServiceObjectE(F.clicksE(post).mapE(function(){
-      var compose = getEltById('composeTextarea');
+      var compose = <HTMLTextAreaElement>getEltById('composeTextarea');
       var c = compose.value;
       compose.value = '';
       commentDisp.appendChild(
@@ -386,9 +383,9 @@ function dispCommentPane(loginData, reviewers, data, fields, comments) {
     return {
       info: infoPane(fields, dataById[arg.appId]),
       highlights: highlights,
-      rating: DIV({ className: 'hbox boxAlignCenter' },
-                  selfStarPane(loginData, arg.highlightCap, 
-                    arg.unhighlightCap, arg.highlightedBy), ratings),
+      rating: F.DIVSty({ className: 'hbox boxAlignCenter' },
+                    [selfStarPane(loginData, arg.highlightCap, 
+                    arg.unhighlightCap, arg.highlightedBy), ratings]),
       commentDisp: commentDisp,
       commentPost: post
     };
@@ -416,9 +413,9 @@ function displayComments(loginData, reviewers, fetchCap, appId, data, fields) {
 }
 
 function makeVis(field) {
-  var input = INPUT({ type: 'checkbox', 
+  var input = F.INPUT({ type: 'checkbox', 
                       checked: field.initVis ? 'checked' : '' });
-  return { elt: DIV(input,field.friendly), 
+  return { elt: F.DIV(input,field.friendly), 
            val: F.$B(input) }
 }
 
@@ -454,7 +451,7 @@ function loadData(urlArgs, loginData, data) {
     new Cols.NumCol('avgscore_rating', 'Average Rating', false)
   ];
   
-  var vises = fields.map(function(f) {
+  var vises = fields.map(function(f) : Node {
     var r = makeVis(f);
     f.visible = r.val;
     return r.elt;
@@ -479,17 +476,18 @@ function loadData(urlArgs, loginData, data) {
 
   F.clicksE(getEltById('showHideFilters'))
   .collectE(false, function(_, showHide) {
+    var elt = <HTMLElement> getEltById('filterDetail');
     if (showHide) {
-      getEltById('filterDetail').style.display = '';
+      elt.style.display = '';
     }
     else {
-      getEltById('filterDetail').style.display = 'none';
+      elt.style.display = 'none';
     }
     return !showHide;
   });
 
-  F.insertDomB(DIV({ id: 'filterPanel' }, tableFilter.elt), 'filterPanel');
-  F.insertDomB(DIV({ id: 'visPanel' }, vises), 'vises');
+  F.insertDomB(F.DIVSty({ id: 'filterPanel' }, [tableFilter.elt]), 'filterPanel');
+  F.insertDomB(F.DIVSty({ id: 'visPanel' }, vises), 'vises');
   
   getEltById('loginPanel').style.display = 'none';
   getEltById('mainPanel').style.display = '';
@@ -514,11 +512,12 @@ function loadData(urlArgs, loginData, data) {
   }
 
   var v = data.collectE({ selected: F.constantB(urlArgs.app) }, processData);
-  F.insertDomB(DIV({ id: 'applicantTable', className: 'table flex1' }, 
-                   headerRow.elt, 
-                   v.index('appTable')
-                    .startsWith(F.elt('div', 'Loading, please wait ...'))),
-               'applicantTable');
+  F.insertDomB(F.DIVSty(
+    { id: 'applicantTable', className: 'table flex1' }, 
+    [headerRow.elt, 
+     v.index('appTable')
+      .startsWith(F.DIV(F.TEXT('Loading, please wait ...')))]),
+    'applicantTable');
   
   var detail = v.index('detail').switchE();
   F.insertDomE(detail.index('info'), 'infoPane');
@@ -538,8 +537,8 @@ var resetClicks = F.clicksE(getEltById('forgot'));
 var canLogin = false;
 
 function mkLogin() {
-  var user = getEltById("username");
-  var pass = getEltById("password");
+  var user = <HTMLInputElement> getEltById("username");
+  var pass = <HTMLInputElement> getEltById("password");
   myRevId = user.value;
   return { username: user.value, password: pass.value };
 }
@@ -578,20 +577,17 @@ function passwordReset(resetCap) {
   }
 
   var reqs = F.clicksE(pwSet).snapshotE(F.liftB(mkReq, new1B));
-  F.insertDomB(DIV(F.getWebServiceObjectE(reqs).startsWith('')),
+  F.insertDomB(F.DIV(F.getWebServiceObjectE(reqs).startsWith('')),
                'pwResetStatus');
 }
 
-/**
- * @param {LoginResponse} loginData
- */
-function setupPasswordChange(loginData) {
+function setupPasswordChange(loginData : LoginResponse) {
   var mainPanel = getEltById('mainPanel');
   var passwordPanel = getEltById('passwordPanel');
-  var pass = getEltById('pass');
-  var pwNew1 = getEltById('pwNew1');
-  var pwNew2 = getEltById('pwNew2');
-  var pwOld = getEltById('pwOld');
+  var pass = <HTMLInputElement> getEltById('pass');
+  var pwNew1 = <HTMLInputElement> getEltById('pwNew1');
+  var pwNew2 = <HTMLInputElement> getEltById('pwNew2');
+  var pwOld =<HTMLInputElement>  getEltById('pwOld');
   var pwStatus = getEltById('pwStatus');
   var pwSet = getEltById('pwSet');
   var pwBack = getEltById('pwBack');
@@ -629,17 +625,17 @@ function setupPasswordChange(loginData) {
   }
 
   var reqs = F.clicksE(pwSet).snapshotE(F.liftB(mkReq, oldB, new1B));
-  F.insertDomB(DIV(F.getWebServiceObjectE(reqs).startsWith('')), 'pwStatus');
+  F.insertDomB(F.DIV(F.getWebServiceObjectE(reqs).startsWith('')), 'pwStatus');
 }
 
 var update = F.receiverE();
 /**
  * @param {LoginResponse} loginData
  */
-function loggedIn(urlArgs, loginData) {
+function loggedIn(urlArgs, loginData : LoginResponse) {
   setupPasswordChange(loginData);
 
-  getEltById('friendly').appendChild(TEXT(loginData.friendlyName));
+  getEltById('friendly').appendChild(F.TEXT(loginData.friendlyName));
   var reqData = { url: loginData.appsCap, request: 'get', response: 'json' };
   var refresh = F.mergeE(F.oneE(true), update);
   loadData(urlArgs, loginData, 
@@ -651,7 +647,8 @@ getEltById('logout').addEventListener('click', function(_) {
 }, false);
 
 (function() {
-  var urlArgs = { app: '' };
+  var urlArgs : URLArgs = { app: '' };
+  var loginData : LoginResponse;
   if (window.location.hash.length > 1) {
     try {
       urlArgs = JSON.parse(unescape(window.location.hash.slice(1)));
@@ -667,8 +664,8 @@ getEltById('logout').addEventListener('click', function(_) {
   }
   window.location.hash = '';
 
-  if (urlArgs.loginData) {
-    var loginData = urlArgs.loginData;
+  if (urlArgs.loginData !== undefined) {
+    loginData = urlArgs.loginData;
     delete urlArgs.loginData;
     loggedIn(urlArgs, loginData);
   }
@@ -682,7 +679,8 @@ getEltById('logout').addEventListener('click', function(_) {
       .index('response')
       .JSONParse();
     var resetResults = resetClicks
-      .mapE(function() { return { username: getEltById('username').value }; })
+      .mapE(function() { 
+          return { username: (<HTMLInputElement>getEltById('username')).value }; })
       .JSONStringify()
       .POST('/reset')
       .index('response')
@@ -694,9 +692,9 @@ getEltById('logout').addEventListener('click', function(_) {
       loggedIn(urlArgs, result);
     });
     F.insertDomB(
-      DIV(F.mergeE(loginResults, resetResults)
-            .mapE(function(r) { return r.msg || ''; })
-            .startsWith('')),
+      F.DIV(F.text(F.mergeE(loginResults, resetResults)
+                    .mapE(function(r) { return r.msg || ''; })
+                    .startsWith(''))),
       'loginPanelOut');
   }
 
@@ -713,12 +711,12 @@ function firefoxUI() {
   var col3 = getEltById('col3');
 
   F.extractEventE(window, 'resize').calmE(1000).startsWith(null).liftB(function(evt) {
-    var elt = resizeChildren.firstElementChild;
+    var elt = <HTMLElement> (resizeChildren.firstElementChild);
     var h = (document.body.clientHeight - filterPanel.clientHeight - 200)+ 'px';
     var w = Math.floor(document.body.clientWidth / 3 - 50) + 'px';
     while (elt) {
       elt.style.height = h;
-      elt = elt.nextElementSibling;
+      elt = <HTMLElement> (elt.nextElementSibling);
     }
    col3.style.width = w;
   });
