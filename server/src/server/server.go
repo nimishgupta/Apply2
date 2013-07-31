@@ -423,7 +423,7 @@ func initSMTP(r io.Reader) smtp.Auth {
 	return smtp.PlainAuth("", user, pass, host)
 }
 
-func Serve(deptPath string, deptName string) {
+func Serve(deptPath string, deptName string, isTesting bool) {
 	keyFile := deptPath + "/private.key"
 	fi, err := os.Lstat(keyFile)
 	if err != nil {
@@ -462,13 +462,17 @@ func Serve(deptPath string, deptName string) {
 	http.HandleFunc("/reset", util.ProtectHandler(sendPasswordResetEmailHandler))
 
 	log.Printf("Starting server ...")
-	//  http.ListenAndServe(":8080", nil)
-	l, err := net.Listen("tcp", "127.0.0.1:9111")
-	if err != nil {
-		panic(err)
-	}
-	err = fcgi.Serve(l, http.DefaultServeMux)
-	if err != nil {
-		panic(err)
+	if isTesting {
+		http.Handle("/", http.FileServer(http.Dir("../client/src")))
+	  http.ListenAndServe(":8080", nil)		
+	} else {
+		l, err := net.Listen("tcp", "127.0.0.1:9111")
+		if err != nil {
+			panic(err)
+		}
+		err = fcgi.Serve(l, http.DefaultServeMux)
+		if err != nil {
+			panic(err)
+		}
 	}
 }

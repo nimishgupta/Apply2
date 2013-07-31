@@ -129,7 +129,9 @@ func main() {
 			}
 		}
 	case "-serve":
-		server.Serve(os.Args[2], os.Args[3])
+		server.Serve(os.Args[2], os.Args[3], false)
+	case "-serve-testing":
+		server.Serve(os.Args[2], os.Args[3], true)
 	default:
 		fmt.Printf("unrecognized argument\n")
 	}

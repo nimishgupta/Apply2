@@ -23,18 +23,18 @@ Homebrew, but that requires building Erlang, which takes a long time.)
 
 ## Configuration Instructions
 
-Create a sample department:
+Configure Nginx [FILL]
+
+Create and serve a sample department:
 
     server $ ./main -dept cs
     server $ cd ../sample
     server $ ../server/main -load demo-data.json sample
-    server $ ../server/main -serve . cs
-
+    server $ ../server/main -serve-testing . cs
 
 ## Development
 
     $ tsc --sourcemap --module amd -w *.ts
-
 
 
 [TypeScript]: http://www.typescriptlang.org
