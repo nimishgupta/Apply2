@@ -4,7 +4,7 @@ GOPATH := $(CURDIR)
 export GOPATH
 
 all: pkg/$(pkgdir)/code.google.com/p/couch-go.a pkg/$(pkgdir)/github.com/tonnerre/go-ldap.a
-	go build main
+	go build apply2
 	cd www && tsc --sourcemap --module amd *.ts
 
 pkg/$(pkgdir)/code.google.com/p/couch-go.a:
@@ -23,4 +23,4 @@ test:
 	go test model
 
 clean:
-	rm -rf main pkg src/code.google.com src/github.com
+	rm -rf apply2 pkg src/code.google.com src/github.com
