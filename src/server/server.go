@@ -14,8 +14,8 @@ import (
 	"net/url"
 	"os"
 	"path/filepath"
+	"time"
 	"util"
-  "time"
 )
 
 const dataKey = "data"
@@ -479,7 +479,7 @@ func Serve(deptPath string, deptName string, isTesting bool) {
 	log.Printf("Starting server ...")
 	if isTesting {
 		http.Handle("/", http.FileServer(http.Dir("../client/src")))
-	  http.ListenAndServe(":8080", nil)		
+		http.ListenAndServe(":8080", nil)
 	} else {
 		l, err := net.Listen("tcp", "127.0.0.1:9111")
 		if err != nil {

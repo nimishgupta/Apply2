@@ -24,3 +24,6 @@ test:
 
 clean:
 	rm -rf apply2 pkg src/code.google.com src/github.com
+
+format:
+	go fmt caps model util server apply2 sample

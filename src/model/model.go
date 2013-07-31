@@ -206,29 +206,29 @@ func NewDept(host string, port string, prefix string) (dept *Dept, err error) {
 }
 
 func LoadDept(host string, port string, prefix string) (*Dept, error) {
-  appDb, error := db.NewDatabase(host, port, prefix + applicationsSuffix)
-  if error != nil {
-    return nil, error
-  }
-  reviewerDb, error := db.NewDatabase(host, port, prefix + reviewersSuffix)
-  if error != nil {
-    return nil, error
-  }
-  commentsDb, error := db.NewDatabase(host, port, prefix + commentsSuffix)
-  if error != nil {
-    return nil, error
-  }
-  highlightsDb, error := db.NewDatabase(host, port, prefix + highlightsSuffix)
-  if error != nil {
-    return nil, error
-  }
-  scoresDb, error := db.NewDatabase(host, port, prefix + scoresSuffix)
-  if error != nil {
-    return nil, error
-  }
+	appDb, error := db.NewDatabase(host, port, prefix+applicationsSuffix)
+	if error != nil {
+		return nil, error
+	}
+	reviewerDb, error := db.NewDatabase(host, port, prefix+reviewersSuffix)
+	if error != nil {
+		return nil, error
+	}
+	commentsDb, error := db.NewDatabase(host, port, prefix+commentsSuffix)
+	if error != nil {
+		return nil, error
+	}
+	highlightsDb, error := db.NewDatabase(host, port, prefix+highlightsSuffix)
+	if error != nil {
+		return nil, error
+	}
+	scoresDb, error := db.NewDatabase(host, port, prefix+scoresSuffix)
+	if error != nil {
+		return nil, error
+	}
 
-	dept := &Dept{prefix, &appDb, &reviewerDb, &commentsDb, &highlightsDb, 
-                &scoresDb}
+	dept := &Dept{prefix, &appDb, &reviewerDb, &commentsDb, &highlightsDb,
+		&scoresDb}
 	for _, deptDB := range dept.databases() {
 		if !deptDB.Exists() {
 			return nil, errors.New(fmt.Sprintf("database %v missing", deptDB.Name))
@@ -289,17 +289,17 @@ func (self *Dept) Applications(revId string) ([]map[string]interface{},
 		int(apps["total_rows"].(float64)))
 	for _, row := range apps["rows"].([]interface{}) {
 		app := row.(map[string]interface{})
-    id := app["id"].(string)
+		id := app["id"].(string)
 		appMap[id] = app["doc"].(map[string]interface{})
 
-    // Workaround bug https://codereview.appspot.com/7196050/    
-    if (len(appMap[id]["recs"].([]interface{})) == 0) {
-      appMap[id]["recs"] = [0]string{}
-    }
-    if (len(appMap[id]["areas"].([]interface{})) == 0) {
-      appMap[id]["areas"] = [0]string{}
-    }
-		
+		// Workaround bug https://codereview.appspot.com/7196050/    
+		if len(appMap[id]["recs"].([]interface{})) == 0 {
+			appMap[id]["recs"] = [0]string{}
+		}
+		if len(appMap[id]["areas"].([]interface{})) == 0 {
+			appMap[id]["areas"] = [0]string{}
+		}
+
 		appMap[id]["highlight"] = make([]string, 0, 1)
 	}
 	for _, rawRow := range scores["rows"].([]interface{}) {
