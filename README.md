@@ -7,42 +7,44 @@
 - [Mercurial] to fetch Go dependencies
 - [Go] to build the server-side code (tested with version 1.0.3)
 - [CouchDB] to run the database server (tested with version 1.3.1)
-- [Nginx] to run the Web server _in production_ (tested with version 1.4.1)
+- [Nginx] to run the Web server (only required for deployment; tested with version 1.4.1)
 
 ## MacOS X + Homebrew Development Instructions
 
-[Homebrew] is a nice package manager that you can use to install several
+[Homebrew] is a nice package manager that you can use to install most
 dependencies.
 
-- Install prerequisites
+- Install prerequisites:
 
-    $ brew install npm go mercurial nginx
-    $ npm install -g typescript
+        $ brew install npm go mercurial nginx
+        $ npm install -g typescript
 
-  To run CouchDB, use the [CouchDBX] application. (You can install CouchDB via
-  Homebrew, but that requires building Erlang, which takes a long time.)
+  To run CouchDB, use the [CouchDBX] application. You could install CouchDB via
+  Homebrew. But, that requires building Erlang, which takes a long time.
 
-- Fetch Code and Build
+- Fetch code and build:
 
-    $ git clone https://github.com/plasma-umass/Apply2.git
-    $ cd Apply2
-    $ ./configure
-    $ make
+        $ git clone https://github.com/plasma-umass/Apply2.git
+        $ cd Apply2
+        $ ./configure
+        $ make
 
-- Create and run sample department
+- Create and run a sample department:
 
-    $ ./apply2 sample mydept
-    $ ./apply2 newreviewer mydept scooby redbull64 "Scooby Doo"
-    $ ./apply2 testserver mydept sample
+        $ ./apply2 sample mydept
+        $ ./apply2 newreviewer mydept scooby redbull64 "Scooby Doo"
+        $ ./apply2 testserver mydept sample
 
-- Visit [http://localhost:8080/disembark.html]
+- Visit http://localhost:8080/disembark.html using Firefox, Chrome, or Safari (Internet Explorer
+  will not work).
 
 
-## Development [FILL]
+## Development Tips [FILL]
+
 
     $ tsc --sourcemap --module amd -w *.ts
 
-## Deployment instructions [FILL]
+## Deployment [FILL]
 
 
 [TypeScript]: http://www.typescriptlang.org
