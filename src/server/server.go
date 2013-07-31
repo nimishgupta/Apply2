@@ -478,7 +478,18 @@ func Serve(deptPath string, deptName string, isTesting bool) {
 
 	log.Printf("Starting server ...")
 	if isTesting {
-		http.Handle("/", http.FileServer(http.Dir("../client/src")))
+		// Simple sanity check for the user: look for the www/ directory.
+		fi, err := os.Lstat("www")
+		if err != nil {
+			fmt.Printf("Could not find the ./www directory.\n")
+			return
+		}
+		if !fi.IsDir() {
+			fmt.Printf("Expected ./www to be a directory.\n")
+			return
+		}
+
+		http.Handle("/", http.FileServer(http.Dir("www")))
 		http.ListenAndServe(":8080", nil)
 	} else {
 		l, err := net.Listen("tcp", "127.0.0.1:9111")

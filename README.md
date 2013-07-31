@@ -6,35 +6,43 @@
 - [TypeScript] to build the client-side code (tested with version 0.9.0.1)
 - [Mercurial] to fetch Go dependencies
 - [Go] to build the server-side code (tested with version 1.0.3)
-- [Nginx] to run the Web server (tested with version 1.4.1)
 - [CouchDB] to run the database server (tested with version 1.3.1)
+- [Nginx] to run the Web server _in production_ (tested with version 1.4.1)
 
-
-## MacOS X + Homebrew Instructions
+## MacOS X + Homebrew Development Instructions
 
 [Homebrew] is a nice package manager that you can use to install several
 dependencies.
 
+- Install prerequisites
+
     $ brew install npm go mercurial nginx
     $ npm install -g typescript
 
-To run CouchDB, use the [CouchDBX] application. (You can install CouchDB via
-Homebrew, but that requires building Erlang, which takes a long time.)
+  To run CouchDB, use the [CouchDBX] application. (You can install CouchDB via
+  Homebrew, but that requires building Erlang, which takes a long time.)
 
-## Configuration Instructions
+- Fetch Code and Build
 
-Configure Nginx [FILL]
+    $ git clone https://github.com/plasma-umass/Apply2.git
+    $ cd Apply2
+    $ ./configure
+    $ make
 
-Create and serve a sample department:
+- Create and run sample department
 
-    server $ ./main -dept cs
-    server $ cd ../sample
-    server $ ../server/main -load demo-data.json sample
-    server $ ../server/main -serve-testing . cs
+    $ ./apply2 sample mydept
+    $ ./apply2 newreviewer mydept scooby redbull64 "Scooby Doo"
+    $ ./apply2 testserver mydept sample
 
-## Development
+- Visit [http://localhost:8080/disembark.html]
+
+
+## Development [FILL]
 
     $ tsc --sourcemap --module amd -w *.ts
+
+## Deployment instructions [FILL]
 
 
 [TypeScript]: http://www.typescriptlang.org
