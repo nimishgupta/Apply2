@@ -16,8 +16,8 @@ dependencies.
 
 - Install prerequisites:
 
-        $ brew install npm go mercurial nginx
-        $ npm install -g typescript
+    $ brew install npm go mercurial
+    $ npm install -g typescript
 
   To run CouchDB, use the [CouchDBX] application. You could install CouchDB via
   Homebrew. But, that requires building Erlang, which takes a long time.
