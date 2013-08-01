@@ -1831,18 +1831,6 @@ var insertDom = function (replaceWithD, hook, optPosition) {
 
 module xhr_ {
 
-  export function ajaxRequest(method,url,body,async,callback) {
-    var xhr = new XMLHttpRequest();
-    xhr.onload = function() { callback(xhr); };
-    xhr.open(method,url,async);
-    if (method === 'POST') {
-      xhr.setRequestHeader('Content-Type','application/x-www-form-urlencoded');
-    }
-    xhr.send(body);
-    return xhr;
-  };
-
-
   export var encodeREST = function(obj) {
     var str = "";
     for (var field in obj) {
@@ -1951,66 +1939,3 @@ module xhr_ {
     });
 };
 
-/**
- * @param {EventStream} requestE
- * @returns {EventStream}
- */
- export function getWebServiceObjectE(requestE) {
-  var responseE = receiverE();
-
-  requestE.mapE(function (obj) {
-    var body = '';
-    var method = 'GET';
-    var url = obj.url;
-
-    var reqType = obj.request ? obj.request : (obj.fields ? 'post' : 'get');
-    if (obj.request === 'get') {
-      if (obj.fields) { url += "?" + xhr_.encodeREST(obj.fields); }
-      body = '';
-      method = 'GET';
-      } else if (obj.request === 'post') {
-        body = JSON.stringify(obj.fields); 
-        method = 'POST';
-        } else if (obj.request === 'rawPost') {
-          body = obj.body;
-          method = 'POST';
-        }
-        else if (obj.request === 'rest') {
-          body = xhr_.encodeREST(obj.fields);
-          method = 'POST';
-        }
-        else {
-          throw("Invalid request type: " + obj.request);
-        }
-
-        var async = obj.async !== false;
-
-        var xhr;
-
-      // Branch on the response type to determine how to parse it
-      if (obj.response === 'json') {
-        xhr = xhr_.ajaxRequest(method,url,body,async,
-          function(xhr) {
-            responseE.sendEvent(JSON.parse(xhr.responseText)); 
-            });
-      }
-      else if (obj.response === 'xml') {
-        xhr_.ajaxRequest(method,url,body,async,
-          function(xhr) {
-            responseE.sendEvent(xhr.responseXML);
-            });
-      }
-      else if (obj.response === 'plain' || !obj.response) {
-        xhr_.ajaxRequest(method,url,body,async,
-          function(xhr) {
-            responseE.sendEvent(xhr.responseText);
-            });
-      }
-      else {
-        throw('Unknown response format: ' + obj.response);
-      }
-      return doNotPropagate;
-      });
-
-return responseE;
-};
