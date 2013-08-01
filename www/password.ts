@@ -30,16 +30,15 @@ export function passwordReset(resetCap : string) {
   F.insertValueB(enabled, pwSet, 'disabled');
   
   function mkReq(newPw) {
-      return {
-        url: resetCap,
-        request: 'post',
-        fields: { password: newPw },
-        response: 'plain'
-      };
+    return { password: newPw };
   }
 
-  var reqs = F.clicksE(pwSet).snapshotE(F.liftB(mkReq, new1B));
-  F.insertDomB(F.DIV(F.getWebServiceObjectE(reqs).startsWith('')),
+  var reqs = F.clicksE(pwSet).snapshotE(F.liftB(mkReq, new1B))
+              .JSONStringify()
+              .POST(resetCap)
+              .index("response");
+
+  F.insertDomB(F.DIV(reqs.startsWith('')),
                'pwResetStatus');
 }
 
@@ -78,14 +77,14 @@ export function setupPasswordChange(loginData) {
   F.insertValueB(enabled, pwSet, 'disabled');
   
   function mkReq(oldPw, newPw) {
-      return {
-        url: loginData.changePasswordCap,
-        request: 'post',
-        fields: { oldPassword: oldPw, newPassword: newPw },
-        response: 'plain'
-      };
+    return { oldPassword: oldPw, newPassword: newPw };
   }
 
-  var reqs = F.clicksE(pwSet).snapshotE(F.liftB(mkReq, oldB, new1B));
-  F.insertDomB(F.DIV(F.getWebServiceObjectE(reqs).startsWith('')), 'pwStatus');
+  var reqs = F.clicksE(pwSet)
+              .snapshotE(F.liftB(mkReq, oldB, new1B))
+              .JSONStringify()
+              .POST(loginData.changePasswordCap)
+              .index('response')
+              .startsWith('');
+  F.insertDomB(F.DIV(reqs), 'pwStatus');
 }

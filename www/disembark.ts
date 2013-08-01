@@ -271,19 +271,19 @@ function selfStarPane(loginData, highlightCap, unhighlightCap, highlightedBy) {
   function mkReq(b) {
       return {
         url: b ? highlightCap : unhighlightCap,
-        request: 'post',
         fields: b ? { readerId: loginData.revId } : { },
-        response: 'plain'
       };
   };
   var init = highlightedBy.indexOf(loginData.revId) !== -1;
   var initSrc = init ? 'star.png' : 'unstar.png';
   return F.tagRec(['click'], function(clicks) {
+    var req = clicks.collectE(init, (_, acc) => !acc).mapE(mkReq);
     var src = 
-      F.getWebServiceObjectE(clicks.collectE(init, function(_, acc) { 
-        return !acc; }).mapE(mkReq))
-      .collectE(initSrc, function(_, acc) {
-        return acc === 'star.png' ? 'unstar.png' : 'star.png' });
+      req.mapE(x => F.oneE(x.fields).JSONStringify().POST(x.url))
+         .switchE()
+         .index('response')
+         .collectE(initSrc, function(_, acc) {
+            return acc === 'star.png' ? 'unstar.png' : 'star.png' });
     src.mapE(function() { update.sendEvent(true); });
     return F.DIV(F.IMG({ src: src.startsWith(initSrc) }));
   });
@@ -331,7 +331,7 @@ function dispCommentPane(loginData, reviewers, data, fields, comments) {
     var post = F.INPUT({ className: 'fill', type: 'button', value: 'Send' });
     var commentDisp = F.DIVSty({ className: 'table' },
       [arg.comments.map(dispComment(loginData, dataById))]);
-    F.getWebServiceObjectE(F.clicksE(post).mapE(function(){
+    var newPosts = F.clicksE(post).mapE(function(){
       var compose = <HTMLTextAreaElement>getEltById('composeTextarea');
       var c = compose.value;
       compose.value = '';
@@ -341,8 +341,11 @@ function dispCommentPane(loginData, reviewers, data, fields, comments) {
           text: c,
           timestamp: Math.floor((new Date()).valueOf() / 1000)
         }));
-      return { url: arg.post, request: 'rawPost', body: c, response: 'plain' };
-    }));
+      return c;
+    });
+
+    newPosts.POST(arg.post);
+
     var initRating = dataById[arg.appId]['score_rating']
       ? dataById[arg.appId]['score_rating'][myRevId]
       : '';
@@ -368,15 +371,12 @@ function dispCommentPane(loginData, reviewers, data, fields, comments) {
  * @param {F.EventStream} appId
  * @return {F.EventStream}
  */
-function displayComments(loginData, reviewers, fetchCap, appId, data, fields) {
-  var comments = F.getWebServiceObjectE(appId.mapE(function(appIdV) {
-    return { 
-      url: fetchCap, 
-      fields: { 'appId': appIdV }, 
-      request: 'get', 
-      response: 'json' 
-    };
-  }));
+function displayComments(loginData : LoginResponse, reviewers, fetchCap, appId, data, fields) {
+  var comments = 
+    appId.mapE(appIdV => ({ 'appId': appIdV }))
+         .GET(fetchCap)
+         .index('response')
+         .JSONParse();
 
   return dispCommentPane(loginData, reviewers, data, fields, comments);
 }
@@ -474,10 +474,13 @@ function loadData(urlArgs, loginData, data) {
         .filterE(function(v) { return v !== ''; });
 
     var detail  = 
-      displayComments(loginData, loginData.reviewers, loginData.fetchCommentsCap,
-           selected, data, fields);
-    return { appTable: appTable, detail: detail, 
-      selected: selected.startsWith(acc.selected.valueNow()) }
+      displayComments(loginData, loginData.reviewers,
+        loginData.fetchCommentsCap, selected, data, fields);
+    return { 
+      appTable: appTable, 
+      detail: detail, 
+      selected: selected.startsWith(acc.selected.valueNow()) 
+    };
   }
 
   var v = data.collectE({ selected: F.constantB(urlArgs.app) }, processData);
@@ -520,10 +523,12 @@ function loggedIn(urlArgs, loginData : LoginResponse) {
   password.setupPasswordChange(loginData);
 
   getEltById('friendly').appendChild(F.TEXT(loginData.friendlyName));
-  var reqData = { url: loginData.appsCap, request: 'get', response: 'json' };
   var refresh = F.mergeE(F.oneE(true), update);
   loadData(urlArgs, loginData, 
-    F.getWebServiceObjectE(refresh.constantE(reqData)));
+    refresh.mapE(function() { return {}; })
+           .GET(loginData.appsCap)
+           .index('response')
+           .JSONParse());
 }
 
 getEltById('logout').addEventListener('click', function(_) {
