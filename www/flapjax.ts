@@ -1678,18 +1678,6 @@ var extractValueOnEventB = function (triggerE, domObj) {
     indices ? indices[indices.length - 1] : undefined);      
 };
 
-//TODO convenience method (default to firstChild nodeValue) 
-var insertValueE = function (triggerE, domObj /* . indices */) {
-  if (!(triggerE instanceof EventStream)) { throw 'insertValueE: expected Event as first arg'; } //SAFETY
-  
-  var indices = Array.prototype.slice.call(arguments, 2);
-  var parent = dom_.getMostDom(domObj, indices);
-  
-  triggerE.mapE(function (v) {
-    dom_.deepStaticUpdate(parent, v, indices? indices[indices.length - 1] : undefined);
-    });
-};
-
 //insertValueB: Behavior * domeNode . Array (id) -> void
 //TODO notify adapter of initial state change?
 /**
