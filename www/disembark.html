@@ -1,70 +1,70 @@
 <!DOCTYPE html>
 <html>
 
-  <head>
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
-<meta http-equiv="Content-Type" content="text/html; charset=UTF-8"/> 
-<link href="disembark.css" rel="stylesheet">
+<head>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+  <meta http-equiv="Content-Type" content="text/html; charset=UTF-8"/> 
+  <link href="disembark.css" rel="stylesheet">
 </head>
 <body>
 
-<iframe src="blank.html" name="temp" style="display: none"></iframe>
+  <iframe src="blank.html" name="temp" style="display: none"></iframe>
 
-<div id="loginPanel" class="vbox">
-  <form class="vbox" action="blank.html" target="temp">
-    <div style="display: table">
-      <div style="display: table-row">
-        <div style="display: table-cell">
-          Username:
+  <div id="loginPanel" class="vbox">
+    <form class="vbox" action="blank.html" target="temp">
+      <div style="display: table">
+        <div style="display: table-row">
+          <div style="display: table-cell">
+            Username:
+          </div>
+          <div style="display: table-cell">
+            <input name="user" type="text" tabindex=0 id="username" />
+          </div>
         </div>
-        <div style="display: table-cell">
-          <input name="user" type="text" tabindex=0 id="username" />
+        <div style="display: table-row">
+          <div style="display: table-cell">
+            Password:
+          </div>
+          <div style="display: table-cell">
+            <input name="pass" type="password" id="password" />
+          </div>
+        </div>
+        <div style="display: table-row">
+          <div style="display: table-cell">
+            <input type="submit" id="login" value="Login" />
+          </div>
+          <div style="display: table-cell">
+            <a id="forgot" href="#" class="buttonLink">Reset Password</a>
+          </div>
         </div>
       </div>
-      <div style="display: table-row">
-        <div style="display: table-cell">
-          Password:
-        </div>
-        <div style="display: table-cell">
-          <input name="pass" type="password" id="password" />
-        </div>
-      </div>
-      <div style="display: table-row">
-        <div style="display: table-cell">
-          <input type="submit" id="login" value="Login" />
-        </div>
-        <div style="display: table-cell">
-          <a id="forgot" href="#" class="buttonLink">Reset Password</a>
-        </div>
-      </div>
-    </div>
-  <div id="loginPanelOut"></div>
-  </form>
-</div>
-
-<div id="mainPanel" class="vbox" style="display: none">
-  <div class="grayPanel vbox">
-    <div id="banner" class="hbox">
-      <div>University of Massachusetts | School of Computer Science</div>
-      <div id="friendly" class="flex1" style="text-align: right"></div>
-      <div><a href="#" id="pass">Change Password</a></div>
-      <div><a href="#" id="logout">Logout</a></div>
-    </div>
-    <div id="showHideFilters" class="buttonLink">▼ Filters</div>
-    <div class="vbox" id="filterDetail">
-      <div>
-        <span id="copyFilters" class="buttonLink">Link to Filter</span>
-      </div>
-      <div id="filterPanel"></div>
-      <div id="vises"></div>
-    </div>
+      <div id="loginPanelOut"></div>
+    </form>
   </div>
-  <div id="ffResizeChildren" class="hbox flex1 whitePanel">
-    <div style="overflow: scroll" class="thirty flex1">
-      <div id="applicantTable"><div id="rows"></div></div>
+
+  <div id="mainPanel" class="vbox" style="display: none">
+    <div class="grayPanel vbox">
+      <div id="banner" class="hbox">
+        <div>University of Massachusetts | School of Computer Science</div>
+        <div id="friendly" class="flex1" style="text-align: right"></div>
+        <div><a href="#" id="pass">Change Password</a></div>
+        <div><a href="#" id="logout">Logout</a></div>
+      </div>
+      <div id="showHideFilters" class="buttonLink">▼ Filters</div>
+      <div class="vbox" id="filterDetail">
+        <div>
+          <span id="copyFilters" class="buttonLink">Link to Filter</span>
+        </div>
+        <div id="filterPanel"></div>
+        <div id="vises"></div>
+      </div>
     </div>
-    <div class="thirty flex3 vbox detailPane" 
-         style="padding-left: 5px; padding-right: 5px; border-left: 1px solid black; border-right: 1px solid black">
+    <div id="ffResizeChildren" class="hbox flex1 whitePanel">
+      <div style="overflow: scroll" class="thirty flex1">
+        <div id="applicantTable"><div id="rows"></div></div>
+      </div>
+      <div class="thirty flex3 vbox detailPane" 
+      style="padding-left: 5px; padding-right: 5px; border-left: 1px solid black; border-right: 1px solid black">
       <div id="infoPane"></div>
     </div>
     <div id="col3" class="thirty flex3 vbox detailPane packCenter">
@@ -72,19 +72,19 @@
       <div id="highlightPane"></div>
 
 
-<div id="commentsPane" class="vbox flex1">
+      <div id="commentsPane" class="vbox flex1">
 
-<div style="overflow: scroll" class="flex1"><div id="commentDisp"></div></div>
+        <div style="overflow: scroll" class="flex1"><div id="commentDisp"></div></div>
 
-<div id="commentCompose" class="hbox">
-<div class="flex1">
-<div class="ctrl">
-<textarea id="composeTextarea" rows="5" class="fill" placeholder="Compose">
-</textarea>
-</div>
-</div>
-<input id="postComment" class="fill" type="button" value="Send">
-</div>
+        <div id="commentCompose" class="hbox">
+          <div class="flex1">
+            <div class="ctrl">
+              <textarea id="composeTextarea" rows="5" class="fill" placeholder="Compose">
+              </textarea>
+            </div>
+          </div>
+          <input id="postComment" class="fill" type="button" value="Send">
+        </div>
 
 
 
@@ -96,22 +96,22 @@
 
 <div id="passwordPanel" style="display:none; background-color: white">
 
-<div>Current password:<input id="pwOld" type="password"/></div>
-<div>New password:<input id="pwNew1" type="password"/></div>
-<div>Repat password:<input id="pwNew2" type="password"/></div>
-<b><div id="pwStatus"></div></b>
-<input type="button" value="Change Password" id="pwSet">
-<div id="pwBack" class="buttonLink">Back</div>
+  <div>Current password:<input id="pwOld" type="password"/></div>
+  <div>New password:<input id="pwNew1" type="password"/></div>
+  <div>Repat password:<input id="pwNew2" type="password"/></div>
+  <b><div id="pwStatus"></div></b>
+  <input type="button" value="Change Password" id="pwSet">
+  <div id="pwBack" class="buttonLink">Back</div>
 
 </div>
 
 <div id="resetPanel" style="display:none; background-color: white">
 
-<div>New password:<input id="pwResetNew1" type="password"/></div>
-<div>Repat password:<input id="pwResetNew2" type="password"/></div>
-<b><div id="pwResetStatus"></div></b>
-<input type="button" value="Change Password" id="pwResetSet">
-<div id="pwResetBack" class="buttonLink">Back</div>
+  <div>New password:<input id="pwResetNew1" type="password"/></div>
+  <div>Repat password:<input id="pwResetNew2" type="password"/></div>
+  <b><div id="pwResetStatus"></div></b>
+  <input type="button" value="Change Password" id="pwResetSet">
+  <div id="pwResetBack" class="buttonLink">Back</div>
 
 </div>
 

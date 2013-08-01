@@ -250,10 +250,6 @@ function dispComment(loginData, dataById) {
   }
 }
 
-function visibility(b) {
-  return b ? '' : 'hidden';
-}
-
 function highlightPane(reviewers, highlightedBy, highlightCap) {
   function revSelect(revId) {
     var hasStar = highlightedBy.indexOf(revId) !== -1;
@@ -295,7 +291,7 @@ function selfStarPane(loginData, highlightCap, unhighlightCap, highlightedBy) {
 }
 
 function ratingPane(label, init, setScoreCap) {
-  function isValid(v) {
+  function isValid(v  : string) {
     var n = Number(v);
     return v === '' || (n >= 0 && n <= 10);
   }
