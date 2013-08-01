@@ -1894,6 +1894,25 @@ module xhr_ {
   return this.xhrWithBody_('POST', url);
 };
 
+ EventStream.prototype.GET = function(url : string) {
+  var respE = receiverE();
+  this.mapE(function(urlParams) {
+    var xhr = new XMLHttpRequest();
+    function callback() {
+      if (xhr.readyState !== 4) {
+        return;
+      }
+      respE.sendEvent({ request: urlParams,
+                        response: xhr.responseText, 
+                        xhr: xhr });
+    }
+    xhr.onload = callback;
+    xhr.open('GET', url + '?' + xhr_.encodeREST(urlParams), true);
+    xhr.send('');
+    });
+    return respE; 
+};
+
 /**
  * Transforms a  stream of objects, <code>obj</code>, to a stream of fields
  * <code>obj[name]</code>.
