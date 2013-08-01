@@ -42,7 +42,7 @@ dependencies.
 ## Development Tips [FILL]
 
 
-    $ tsc --sourcemap --module amd -w *.ts
+    $ tsc --sourcemap --module amd -w disembark.ts
 
 ## Deployment [FILL]
 
