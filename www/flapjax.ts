@@ -20,6 +20,17 @@ var doNotPropagate = { };
   return Array.prototype.slice.call(arrayLike);
 };
 
+function encodeREST(obj) : string {
+  var str = "";
+  for (var field in obj) {
+    if (typeof(obj[field]) !== 'function') { // skips functions in the object
+      if (str != '') { str += '&'; }
+      str += field + '=' + encodeURIComponent(obj[field]);
+    }
+  }
+  return str;
+}
+
 interface KV {
   k: number
 }
@@ -496,7 +507,7 @@ export class EventStream {
                           xhr: xhr });
       }
       xhr.onload = callback;
-      xhr.open('GET', url + '?' + xhr_.encodeREST(urlParams), true);
+      xhr.open('GET', url + '?' + encodeREST(urlParams), true);
       xhr.send('');
       });
       return respE; 
@@ -1869,20 +1880,3 @@ var insertDom = function (replaceWithD, hook, optPosition) {
 };
 
 
-//////////////////////////////////////////////////////////////////////////////
-// Combinators for web services
-
-module xhr_ {
-
-  export var encodeREST = function(obj) {
-    var str = "";
-    for (var field in obj) {
-    if (typeof(obj[field]) !== 'function') { // skips functions in the object
-      if (str != '') { str += '&'; }
-      str += field + '=' + encodeURIComponent(obj[field]);
-    }
-  }
-  return str;
-};
-
-}
