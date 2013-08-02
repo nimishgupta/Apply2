@@ -20,6 +20,62 @@ var doNotPropagate = { };
   return Array.prototype.slice.call(arrayLike);
 };
 
+interface KV {
+  k: number
+}
+
+// Priority, where elements have a field 'k' that determines ordering.
+class PQ<T extends KV> {
+  val : Array<T> ;
+  
+  constructor() {
+    this.val = []
+  }
+
+  public insert(kv : T) {
+    this.val.push(kv);
+    var kvpos = this.val.length-1;
+    while(kvpos > 0 && kv.k < this.val[Math.floor((kvpos-1)/2)].k) {
+      var oldpos = kvpos;
+      kvpos = Math.floor((kvpos-1)/2);
+      this.val[oldpos] = this.val[kvpos];
+      this.val[kvpos] = kv;
+    }
+  }
+
+  public isEmpty() : bool {
+    return this.val.length === 0; 
+  }
+  
+  public pop() : T {
+    if(this.val.length === 1) {
+      return this.val.pop();
+    }
+    var ret = this.val.shift();
+    this.val.unshift(this.val.pop());
+    var kvpos = 0;
+    var kv = this.val[0];
+    while(1) { 
+      var leftChild = (kvpos*2+1 < this.val.length ? this.val[kvpos*2+1].k : kv.k+1);
+      var rightChild = (kvpos*2+2 < this.val.length ? this.val[kvpos*2+2].k : kv.k+1);
+      if(leftChild > kv.k && rightChild > kv.k)
+      break;
+
+      if(leftChild < rightChild) {
+        this.val[kvpos] = this.val[kvpos*2+1];
+        this.val[kvpos*2+1] = kv;
+        kvpos = kvpos*2+1;
+      }
+      else {
+        this.val[kvpos] = this.val[kvpos*2+2];
+        this.val[kvpos*2+2] = kv;
+        kvpos = kvpos*2+2;
+      }
+    }
+    return ret;
+  }
+}
+
 //////////////////////////////////////////////////////////////////////////////
 // Flapjax core
 
@@ -36,63 +92,22 @@ var doNotPropagate = { };
   this.value = value;
 };
 
-/**
- * @constructor PQ
- * @private
- */
- var PQ = function () {
-  var ctx = this;
-  ctx.val = [];
-  this.insert = function (kv) {
-    ctx.val.push(kv);
-    var kvpos = ctx.val.length-1;
-    while(kvpos > 0 && kv.k < ctx.val[Math.floor((kvpos-1)/2)].k) {
-      var oldpos = kvpos;
-      kvpos = Math.floor((kvpos-1)/2);
-      ctx.val[oldpos] = ctx.val[kvpos];
-      ctx.val[kvpos] = kv;
-    }
-  };
-  this.isEmpty = function () { 
-    return ctx.val.length === 0; 
-  };
-  this.pop = function () {
-    if(ctx.val.length === 1) {
-      return ctx.val.pop();
-    }
-    var ret = ctx.val.shift();
-    ctx.val.unshift(ctx.val.pop());
-    var kvpos = 0;
-    var kv = ctx.val[0];
-    while(1) { 
-      var leftChild = (kvpos*2+1 < ctx.val.length ? ctx.val[kvpos*2+1].k : kv.k+1);
-      var rightChild = (kvpos*2+2 < ctx.val.length ? ctx.val[kvpos*2+2].k : kv.k+1);
-      if(leftChild > kv.k && rightChild > kv.k)
-      break;
 
-      if(leftChild < rightChild) {
-        ctx.val[kvpos] = ctx.val[kvpos*2+1];
-        ctx.val[kvpos*2+1] = kv;
-        kvpos = kvpos*2+1;
-      }
-      else {
-        ctx.val[kvpos] = ctx.val[kvpos*2+2];
-        ctx.val[kvpos*2+2] = kv;
-        kvpos = kvpos*2+2;
-      }
-    }
-    return ret;
-  };
-};
 
 var lastRank = 0;
 var stamp = 1;
 var nextStamp = function () { return ++stamp; };
 
+interface P {
+  k: number
+  n: any
+  v: any
+}
+
 //propagatePulse: Pulse * Array Node -> 
 //Send the pulse to each node 
 var propagatePulse = function (pulse, node) {
-  var queue = new PQ(); //topological queue for current timestep
+  var queue = new PQ<P>(); //topological queue for current timestep
 
   queue.insert({k:node.rank,n:node,v:pulse});
 
