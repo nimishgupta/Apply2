@@ -123,60 +123,423 @@ var propagatePulse = function (pulse, node) {
   }
 };
 
-/**
- * Event: Array Node b * ( (Pulse a -> Void) * Pulse b -> Void)
- * @constructor
- * @param {Array.<EventStream>} nodes
- */
- function EventStream(nodes,updater) {
-  this.updater = updater;
-  
-  this.sendsTo = []; //forward link
-  
-  this.rank = ++lastRank;
+export class EventStream {
+  updater : any;
+  sendsTo: Array<EventStream>;
+  public rank: number;
 
-  for (var i = 0; i < nodes.length; i++) {
-    nodes[i].attachListener(this);
-  }
-  
-};
+  constructor (nodes : Array<EventStream>, updater : any) {
+    this.updater = updater;
+    this.sendsTo = [];
+    this.rank = ++lastRank;
 
-/**
- * note: does not add flow as counting for rank nor updates parent ranks
- * @param {EventStream} dependent
- */
- EventStream.prototype.attachListener = function(dependent) {
-  if (!(dependent instanceof EventStream)) {
-    throw 'attachListener: expected an EventStream';
-  }
-  this.sendsTo.push(dependent);
-  
-  if(this.rank > dependent.rank) {
-    var q = [dependent];
-    while(q.length) {
-      var cur = q.splice(0,1)[0];
-      cur.rank = ++lastRank;
-      q = q.concat(cur.sendsTo);
+    for (var i = 0; i < nodes.length; i++) {
+      nodes[i].attachListener(this);
     }
   }
-};
 
-//note: does not remove flow as counting for rank nor updates parent ranks
-EventStream.prototype.removeListener = function (dependent) {
-  if (!(dependent instanceof EventStream)) {
-    throw 'removeListener: expected an EventStream';
+  public sendEvent(value) {
+    propagatePulse(new Pulse(nextStamp(), value), this);
   }
 
-  var foundSending = false;
-  for (var i = 0; i < this.sendsTo.length && !foundSending; i++) {
-    if (this.sendsTo[i] === dependent) {
-      this.sendsTo.splice(i, 1);
-      foundSending = true;
+  // note: does not add flow as counting for rank nor updates parent ranks
+  public attachListener(dependent : EventStream) {
+
+    this.sendsTo.push(dependent);
+  
+    if(this.rank > dependent.rank) {
+      var q = [dependent];
+      while(q.length) {
+        var cur = q.splice(0,1)[0];
+        cur.rank = ++lastRank;
+        q = q.concat(cur.sendsTo);
+      }
     }
   }
+
+  //note: does not remove flow as counting for rank nor updates parent ranks
+  private removeListener(dependent : EventStream) {
+    var foundSending = false;
+    for (var i = 0; i < this.sendsTo.length && !foundSending; i++) {
+      if (this.sendsTo[i] === dependent) {
+        this.sendsTo.splice(i, 1);
+        foundSending = true;
+      }
+    }
+    return foundSending;
+  }
+
+  public mergeE(...args : Array<EventStream>) {
+    return internalE([this].concat(args));
+  }
+
+  /**
+   * Transforms this event stream to produce only <code>constantValue</code>.
+   *
+   * @param {*} constantValue
+   * @returns {EventStream}
+   */
+   public constantE(constantValue) {
+    return new EventStream([this],function(pulse) {
+      pulse.value = constantValue;
+      return pulse;
+    });
+  }
+
+  public bindE(k : (v:any) => EventStream) {
+    /* m.sendsTo resultE
+     * resultE.sendsTo prevE
+     * prevE.sendsTo returnE
+     */
+     var m = this;
+     var prevE;
+
+     var outE = new EventStream([],function(pulse) { return pulse; });
+
+     var inE = new EventStream([m], function (pulse) {
+      if (prevE) {
+        prevE.removeListener(outE, true);
+        
+      }
+      prevE = k(pulse.value);
+      if (prevE instanceof EventStream) {
+        prevE.attachListener(outE);
+      }
+      else {
+        throw "bindE : expected EventStream";
+      }
+
+      return doNotPropagate;
+      });
+
+     return outE;
+   }
+
+   public mapE(f : (x:any) => any) : EventStream {
+    
+    return new EventStream([this],function(pulse) {
+      pulse.value = f(pulse.value);
+      return pulse;
+      });
+  }
+
+  public notE() { 
+    return this.mapE(function(v) { 
+      return !v; 
+      }); 
+  }
+
+  // Only produces events that match the given predicate.
+  public filterE(pred : (x:any) => bool) : EventStream {
+    
+    // Can be a bindE
+    return new EventStream([this], function(pulse) {
+      return pred(pulse.value) ? pulse : doNotPropagate;
+      });
+  }
+
+  /**
+   * Only triggers on the first event on this event stream.
+   *
+   * @returns {EventStream}
+   */
+   public onceE() {
+    var done = false;
+    return this.filterE(function(_) {
+      if (!done) {
+        done = true;
+        return true;
+      }
+      return false;
+      });
+  }
+
+  // Does not trigger on the first event on this event stream.
+   public skipFirstE() : EventStream {
+    var skipped = false;
+    return this.filterE(function(_) {
+      if (!skipped) {
+        skipped = true;
+        return false;
+      }
+      return true;
+      });
+  }
+
+  /**
+   * Transforms this event stream to produce the result accumulated by
+   * <code>combine</code>.
+   *
+   * <p>The following example accumulates a list of values with the latest
+   * at the head:</p>
+   *
+   * @example
+   * original.collectE([],function(new,arr) { return [new].concat(arr); });
+   *
+   * @param {*} init
+   * @param {Function} combine <code>combine(acc, val)</code> 
+   * @returns {EventStream}
+   */
+   public collectE(init, combine) {
+    var acc = init;
+    return this.mapE(
+      function (n) {
+        var next = combine(n, acc);
+        acc = next;
+        return next;
+        });
+  }
+
+  /**
+   * Given a stream of event streams, fires events from the most recent event
+   * stream.
+   * 
+   * @returns {EventStream}
+   */
+   public switchE() {
+    return this.bindE(function(v) { return v; });
+  }
+
+/**
+ * Propagates signals from this event stream after <code>time</code>
+ * milliseconds.
+ * 
+ * @param {Behavior|number} time
+ * @returns {EventStream}
+ */
+ public delayE(time) {
+  var event = this;
   
-  return foundSending;
-};
+  if (time instanceof Behavior) {
+
+    var receiverEE = internalE();
+    var link = 
+    {
+      from: event, 
+      towards: delayStaticE(event, time.valueNow())
+    };
+    
+    //TODO: Change semantics such that we are always guaranteed to get an event going out?
+    var switcherE = 
+    new EventStream(
+      [time.changes()],
+      function (p) {
+        link.from.removeListener(link.towards); 
+        link =
+        {
+          from: event, 
+          towards: delayStaticE(event, p.value)
+        };
+        sendEvent(receiverEE, link.towards);
+        return doNotPropagate;
+        });
+    
+    var resE = receiverEE.switchE();
+    
+    sendEvent(switcherE, time.valueNow());
+    return resE;
+    
+    } else { return delayStaticE(event, time); }
+  }
+
+  /** 
+   * Produces values from <i>valueB</i>, which are sampled when <i>sourceE</i>
+   * is triggered.
+   *
+   * @param {Behavior} valueB
+   * @returns {EventStream}
+   */
+   public snapshotE(valueB) {
+    return new EventStream([this], function (pulse) {
+      pulse.value = valueB.valueNow(); // TODO: glitch
+      return pulse;
+      });
+  }
+
+  /**
+   * Filters out repeated events that are equal (JavaScript's <code>===</code>).
+   *
+   * @param {*=} optStart initial value (optional)
+   * @returns {EventStream}
+   */
+   public filterRepeatsE(optStart) {
+    var hadFirst = optStart === undefined ? false : true;
+    var prev = optStart;
+
+    return this.filterE(function (v) {
+      if (!hadFirst || prev !== v) {
+        hadFirst = true;
+        prev = v;
+        return true;
+      }
+      else {
+        return false;
+      }
+      });
+  }
+
+  /**
+   * <i>Calms</i> this event stream to fire at most once every <i>time</i> ms.
+   *
+   * Events that occur sooner are delayed to occur <i>time</i> milliseconds after
+   * the most recently-fired event.  Only the  most recent event is delayed.  So,
+   * if multiple events fire within <i>time</i>, only the last event will be
+   * propagated.
+   *
+   * @param {!number|Behavior} time
+   * @returns {EventStream}
+   */
+   public calmE(time) {
+    if (!(time instanceof Behavior)) {
+      time = constantB(time);
+    }
+
+    var out = internalE();
+    new EventStream(
+      [this],
+      function() {
+        var towards = null;
+        return function (p) {
+          if (towards !== null) { clearTimeout(towards); }
+          towards = setTimeout( function () { 
+            towards = null;
+            sendEvent(out,p.value); }, time.valueNow());
+          return doNotPropagate;
+        };
+        }());
+    return out;
+  }
+
+  /**
+   * Only triggers at most every <code>time</code> milliseconds. Higher-frequency
+   * events are thus ignored.
+   *
+   * @param {!number|Behavior} time
+   * @returns {EventStream}
+   */
+   public blindE(time) {
+    return new EventStream(
+      [this],
+      function () {
+        var intervalFn = 
+        time instanceof Behavior?
+        function () { return time.valueNow(); }
+        : function () { return time; };
+        var lastSent = (new Date()).getTime() - intervalFn() - 1;
+        return function (p) {
+          var curTime = (new Date()).getTime();
+          if (curTime - lastSent > intervalFn()) {
+            lastSent = curTime;
+            return p;
+          }
+          else { return doNotPropagate; }
+        };
+        }());
+  }
+
+  /**
+   * @param {*} init
+   * @returns {!Behavior}
+   */
+   public startsWith(init) {
+    return new Behavior(this,init);
+  }
+
+  /**
+   * Must be an event stream of bodies
+   * 
+   * @private
+   * @param {!string} method PUT or POST
+   * @param {!string} url URL to POST to
+   * @returns {EventStream} an event stream carrying objects with three
+   * fields: the request, the response, and the xhr object.
+   */
+   private xhrWithBody (method, url : string) : EventStream {
+    var respE = receiverE();
+    this.mapE(function(body) {
+      var xhr = new XMLHttpRequest();
+      function callback() {
+        if (xhr.readyState !== 4) {
+          return;
+        }
+        respE.sendEvent({ request: body, response: xhr.responseText, xhr: xhr });
+      }
+      xhr.onload = callback;
+      // We only do async. Build your own for synchronous.
+      xhr.open(method, url, true);
+      xhr.send(body);
+      });
+    return respE; 
+  }
+
+  /**
+   * POST the body to url. The resulting event stream carries objects with three
+   * fields: <code>{request: string, response: string, xhr: XMLHttpRequest}</code>
+   *
+   * @param {!string} url
+   * @returns {EventStream}
+   */
+   public POST(url : string) {
+    return this.xhrWithBody('POST', url);
+  }
+
+   public GET(url : string) : EventStream {
+    var respE = receiverE();
+    this.mapE(function(urlParams) {
+      var xhr = new XMLHttpRequest();
+      function callback() {
+        if (xhr.readyState !== 4) {
+          return;
+        }
+        respE.sendEvent({ request: urlParams,
+                          response: xhr.responseText, 
+                          xhr: xhr });
+      }
+      xhr.onload = callback;
+      xhr.open('GET', url + '?' + xhr_.encodeREST(urlParams), true);
+      xhr.send('');
+      });
+      return respE; 
+  }
+
+  /**
+   * Transforms a  stream of objects, <code>obj</code>, to a stream of fields
+   * <code>obj[name]</code>.
+   *
+   * @param {!string} name
+   * @returns {EventStream}
+   */
+   public index(name : string) {
+    return this.mapE(function(obj) {
+      if (typeof obj !== 'object' && obj !== null) {
+        throw 'expected object';
+      }
+      return obj[name];
+      });
+  }
+
+  /**
+   * Parses a steram of JSON-serialized strings.
+   *
+   * @returns {EventStream}
+   */
+   public JSONParse() {
+    return this.mapE(function(val) {
+      return JSON.parse(val);
+      });
+  }
+
+  /**
+   * Serializes a stream of values.
+   *
+   * @returns {EventStream}
+   */
+   public JSONStringify() {
+    return this.mapE(function(val) {
+      return JSON.stringify(val);
+      });
+  }
+}
 
 /**
  *An internalE is a node that propagates all pulses it receives.  It's used
@@ -242,24 +605,6 @@ EventStream.prototype.removeListener = function (dependent) {
   return internalE(args);
 };
 
-EventStream.prototype.mergeE = function(...args) {
-  return internalE([this].concat(args));
-};
-
-/**
- * Transforms this event stream to produce only <code>constantValue</code>.
- *
- * @param {*} constantValue
- * @returns {EventStream}
- */
- EventStream.prototype.constantE = function(constantValue) {
-  return new EventStream([this],function(pulse) {
-    pulse.value = constantValue;
-    return pulse;
-    });
-};
-
-
 /**
  * Creates an event stream that can be imperatively triggered with 
  * <code>sendEvent</code>.
@@ -268,9 +613,6 @@ EventStream.prototype.mergeE = function(...args) {
  */
  export function receiverE() {
   var evt = internalE();
-  evt.sendEvent = function(value) {
-    propagatePulse(new Pulse(nextStamp(), value),evt);
-  };
   return evt;
 };
 
@@ -279,145 +621,6 @@ function sendEvent(node, value) {
   if (!(node instanceof EventStream)) { throw 'sendEvent: expected Event as first arg'; } //SAFETY
   
   propagatePulse(new Pulse(nextStamp(), value),node);
-};
-
-// bindE :: EventStream a * (a -> EventStream b) -> EventStream b
-EventStream.prototype.bindE = function(k) {
-  /* m.sendsTo resultE
-   * resultE.sendsTo prevE
-   * prevE.sendsTo returnE
-   */
-   var m = this;
-   var prevE;
-
-   var outE = new EventStream([],function(pulse) { return pulse; });
-   outE.name = "bind outE";
-
-   var inE = new EventStream([m], function (pulse) {
-    if (prevE) {
-      prevE.removeListener(outE, true);
-      
-    }
-    prevE = k(pulse.value);
-    if (prevE instanceof EventStream) {
-      prevE.attachListener(outE);
-    }
-    else {
-      throw "bindE : expected EventStream";
-    }
-
-    return doNotPropagate;
-    });
-   inE.name = "bind inE";
-
-   return outE;
- };
-
-/**
- * @param {function(*):*} f
- * @returns {!EventStream}
- */
- EventStream.prototype.mapE = function(f) {
-  if (!(f instanceof Function)) {
-    throw ('mapE : expected a function as the first argument; received ' + f);
-  };
-  
-  return new EventStream([this],function(pulse) {
-    pulse.value = f(pulse.value);
-    return pulse;
-    });
-};
-
-/**
- * @returns {EventStream}
- */
- EventStream.prototype.notE = function() { 
-  return this.mapE(function(v) { 
-    return !v; 
-    }); 
-};
-
-/**
- * Only produces events that match the given predicate.
- *
- * @param {function(*):boolean} pred
- * @returns {EventStream}
- */
- EventStream.prototype.filterE = function(pred) {
-  if (!(pred instanceof Function)) {
-    throw ('filterE : expected predicate; received ' + pred);
-  };
-  
-  // Can be a bindE
-  return new EventStream([this], function(pulse) {
-    return pred(pulse.value) ? pulse : doNotPropagate;
-    });
-};
-
-/**
- * Only triggers on the first event on this event stream.
- *
- * @returns {EventStream}
- */
- EventStream.prototype.onceE = function() {
-  var done = false;
-  return this.filterE(function(_) {
-    if (!done) {
-      done = true;
-      return true;
-    }
-    return false;
-    });
-};
-
-/**
- * Does not trigger on the first event on this event stream.
- *
- * @returns {EventStream}
- */
- EventStream.prototype.skipFirstE = function() {
-  var skipped = false;
-  return this.filterE(function(_) {
-    if (!skipped) {
-      skipped = true;
-      return false;
-    }
-    return true;
-    });
-};
-
-/**
- * Transforms this event stream to produce the result accumulated by
- * <code>combine</code>.
- *
- * <p>The following example accumulates a list of values with the latest
- * at the head:</p>
- *
- * @example
- * original.collectE([],function(new,arr) { return [new].concat(arr); });
- *
- * @param {*} init
- * @param {Function} combine <code>combine(acc, val)</code> 
- * @returns {EventStream}
- */
- EventStream.prototype.collectE = function(init, combine) {
-  var acc = init;
-  return this.mapE(
-    function (n) {
-      var next = combine(n, acc);
-      acc = next;
-      return next;
-      });
-};
-
-/**
- * Given a stream of event streams, fires events from the most recent event
- * stream.
- * 
- * @returns {EventStream}
- */
- EventStream.prototype.switchE = function() {
-  return this.bindE(function(v) { return v; });
 };
 
 var recE = function(fn) {
@@ -440,47 +643,7 @@ var delayStaticE = function (event, time) {
   return resE;
 };
 
-/**
- * Propagates signals from this event stream after <code>time</code>
- * milliseconds.
- * 
- * @param {Behavior|number} time
- * @returns {EventStream}
- */
- EventStream.prototype.delayE = function (time) {
-  var event = this;
-  
-  if (time instanceof Behavior) {
 
-    var receiverEE = internalE();
-    var link = 
-    {
-      from: event, 
-      towards: delayStaticE(event, time.valueNow())
-    };
-    
-    //TODO: Change semantics such that we are always guaranteed to get an event going out?
-    var switcherE = 
-    new EventStream(
-      [time.changes()],
-      function (p) {
-        link.from.removeListener(link.towards); 
-        link =
-        {
-          from: event, 
-          towards: delayStaticE(event, p.value)
-        };
-        sendEvent(receiverEE, link.towards);
-        return doNotPropagate;
-        });
-    
-    var resE = receiverEE.switchE();
-    
-    sendEvent(switcherE, time.valueNow());
-    return resE;
-    
-    } else { return delayStaticE(event, time); }
-  };
 
 //mapE: ([Event] (. Array a -> b)) . Array [Event] a -> [Event] b
 var mapE = function (fn /*, [node0 | val0], ...*/) {
@@ -536,109 +699,6 @@ var mapE = function (fn /*, [node0 | val0], ...*/) {
           throw 'unknown mapE case';
         }
       };
-
-/** 
- * Produces values from <i>valueB</i>, which are sampled when <i>sourceE</i>
- * is triggered.
- *
- * @param {Behavior} valueB
- * @returns {EventStream}
- */
- EventStream.prototype.snapshotE = function (valueB) {
-  return new EventStream([this], function (pulse) {
-    pulse.value = valueB.valueNow(); // TODO: glitch
-    return pulse;
-    });
-};
-
-/**
- * Filters out repeated events that are equal (JavaScript's <code>===</code>).
- *
- * @param {*=} optStart initial value (optional)
- * @returns {EventStream}
- */
- EventStream.prototype.filterRepeatsE = function(optStart) {
-  var hadFirst = optStart === undefined ? false : true;
-  var prev = optStart;
-
-  return this.filterE(function (v) {
-    if (!hadFirst || prev !== v) {
-      hadFirst = true;
-      prev = v;
-      return true;
-    }
-    else {
-      return false;
-    }
-    });
-};
-
-/**
- * <i>Calms</i> this event stream to fire at most once every <i>time</i> ms.
- *
- * Events that occur sooner are delayed to occur <i>time</i> milliseconds after
- * the most recently-fired event.  Only the  most recent event is delayed.  So,
- * if multiple events fire within <i>time</i>, only the last event will be
- * propagated.
- *
- * @param {!number|Behavior} time
- * @returns {EventStream}
- */
- EventStream.prototype.calmE = function(time) {
-  if (!(time instanceof Behavior)) {
-    time = constantB(time);
-  }
-
-  var out = internalE();
-  new EventStream(
-    [this],
-    function() {
-      var towards = null;
-      return function (p) {
-        if (towards !== null) { clearTimeout(towards); }
-        towards = setTimeout( function () { 
-          towards = null;
-          sendEvent(out,p.value); }, time.valueNow());
-        return doNotPropagate;
-      };
-      }());
-  return out;
-};
-
-/**
- * Only triggers at most every <code>time</code> milliseconds. Higher-frequency
- * events are thus ignored.
- *
- * @param {!number|Behavior} time
- * @returns {EventStream}
- */
- EventStream.prototype.blindE = function (time) {
-  return new EventStream(
-    [this],
-    function () {
-      var intervalFn = 
-      time instanceof Behavior?
-      function () { return time.valueNow(); }
-      : function () { return time; };
-      var lastSent = (new Date()).getTime() - intervalFn() - 1;
-      return function (p) {
-        var curTime = (new Date()).getTime();
-        if (curTime - lastSent > intervalFn()) {
-          lastSent = curTime;
-          return p;
-        }
-        else { return doNotPropagate; }
-      };
-      }());
-};
-
-/**
- * @param {*} init
- * @returns {!Behavior}
- */
- EventStream.prototype.startsWith = function(init) {
-  return new Behavior(this,init);
-};
 
 /**
  * @constructor
@@ -1846,99 +1906,3 @@ module xhr_ {
 };
 
 }
-
-/**
- * Must be an event stream of bodies
- * 
- * @private
- * @param {!string} method PUT or POST
- * @param {!string} url URL to POST to
- * @returns {EventStream} an event stream carrying objects with three
- * fields: the request, the response, and the xhr object.
- */
- EventStream.prototype.xhrWithBody_ = function(method, url) {
-  var respE = receiverE();
-  this.mapE(function(body) {
-    var xhr = new XMLHttpRequest();
-    function callback() {
-      if (xhr.readyState !== 4) {
-        return;
-      }
-      respE.sendEvent({ request: body, response: xhr.responseText, xhr: xhr });
-    }
-    xhr.onload = callback;
-    // We only do async. Build your own for synchronous.
-    xhr.open(method, url, true);
-    xhr.send(body);
-    });
-  return respE; 
-};
-
-/**
- * POST the body to url. The resulting event stream carries objects with three
- * fields: <code>{request: string, response: string, xhr: XMLHttpRequest}</code>
- *
- * @param {!string} url
- * @returns {EventStream}
- */
- EventStream.prototype.POST = function(url) {
-  return this.xhrWithBody_('POST', url);
-};
-
- EventStream.prototype.GET = function(url : string) {
-  var respE = receiverE();
-  this.mapE(function(urlParams) {
-    var xhr = new XMLHttpRequest();
-    function callback() {
-      if (xhr.readyState !== 4) {
-        return;
-      }
-      respE.sendEvent({ request: urlParams,
-                        response: xhr.responseText, 
-                        xhr: xhr });
-    }
-    xhr.onload = callback;
-    xhr.open('GET', url + '?' + xhr_.encodeREST(urlParams), true);
-    xhr.send('');
-    });
-    return respE; 
-};
-
-/**
- * Transforms a  stream of objects, <code>obj</code>, to a stream of fields
- * <code>obj[name]</code>.
- *
- * @param {!string} name
- * @returns {EventStream}
- */
- EventStream.prototype.index = function(name) {
-  return this.mapE(function(obj) {
-    if (typeof obj !== 'object' && obj !== null) {
-      throw 'expected object';
-    }
-    return obj[name];
-    });
-};
-
-/**
- * Parses a steram of JSON-serialized strings.
- *
- * @returns {EventStream}
- */
- EventStream.prototype.JSONParse = function() {
-  return this.mapE(function(val) {
-    return JSON.parse(val);
-    });
-};
-
-/**
- * Serializes a stream of values.
- *
- * @returns {EventStream}
- */
- EventStream.prototype.JSONStringify = function() {
-  return this.mapE(function(val) {
-    return JSON.stringify(val);
-    });
-};
-
