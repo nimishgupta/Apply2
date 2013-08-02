@@ -116,7 +116,7 @@ function headers(fields) {
     }
     var toggle = F.tagRec(['click'], function(clickE) {
       return F.SPANSty({ className: 'buttonLink' },
-                 [F.text(clickE.collectE(true, function(_, b) { return !b; })
+                 [F.TEXT(clickE.collectE(true, function(_, b) { return !b; })
                              .mapE(function(b) { return b ? '▲' : '▼'; })
                              .startsWith('△'))]);
     });
@@ -581,7 +581,7 @@ getEltById('logout').addEventListener('click', function(_) {
       loggedIn(urlArgs, result);
     });
     F.insertDomB(
-      F.DIV(F.text(F.mergeE(loginResults, resetResults)
+      F.DIV(F.TEXT(F.mergeE(loginResults, resetResults)
                     .mapE(function(r) { return r.msg || ''; })
                     .startsWith(''))),
       'loginPanelOut');

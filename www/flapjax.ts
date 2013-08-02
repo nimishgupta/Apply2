@@ -1462,9 +1462,6 @@ export function insertDomInternal(hookD, replaceWithD, optPosition) {
 };
 }
 
-// TODO: should be richer
-var $ = dom_.getObj;
-
 /**
  * An event stream that fires every <code>intervalB</code> ms.
  *
@@ -1474,7 +1471,7 @@ var $ = dom_.getObj;
  * @param {!Behavior|number} intervalB
  * @returns {EventStream}
  */
- var timerE = function(intervalB) {
+ export function timerE(intervalB) {
   if (!(intervalB instanceof Behavior)) {
     intervalB = constantB(intervalB);
   }
@@ -1493,31 +1490,8 @@ var $ = dom_.getObj;
     }
     });
   return eventStream;
-};
+}
 
-/**
- * Creates a DOM element with time-varying children.
- *
- * @param {!string} tag
- * @param {!string|Object|Node=} opt_style
- * @param {...(string|Node|Array.<Node>|Behavior)} var_args
- * @returns {!HTMLElement}
- */
- var elt = function(tag, opt_style, var_args) {
-  return dom_.makeTagB(tag).apply(null, mkArray(arguments).slice(1));
-};
-
-//TEXTB: Behavior a -> Behavior Dom TextNode
-export function text(strB) {
-
-  // TODO: Create a static textnode and set the data field?
-  //      if (!(strB instanceof Behavior || typeof(strB) == 'string')) { throw 'TEXTB: expected Behavior as second arg'; } //SAFETY
-  if (!(strB instanceof Behavior)) { strB = constantB(strB); }
-  
-  return strB.changes().mapE(
-    function (txt) { return document.createTextNode(txt); })
-  .startsWith(document.createTextNode(strB.valueNow()));
-};
 
 function makeDom(tag : string) {
   var make = dom_.makeTagB(tag);
@@ -1583,7 +1557,13 @@ export function DIVClass(className : string, ...args : Array<Node>) : HTMLDivEle
 }
 
 export function TEXT(str) {
-  return document.createTextNode(str);
+  if (typeof str === "string") {
+    return document.createTextNode(str);    
+  }
+
+  var node = document.createTextNode(str.valueNow());
+  str.liftB(s => node.textContent = s);
+  return node;
 };
 
 ///////////////////////////////////////////////////////////////////////////////
