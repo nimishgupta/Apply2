@@ -134,7 +134,7 @@ var propagatePulse = function (pulse, node) {
   }
 };
 
-export class EventStream {
+export class EventStream<T> {
   updater : any;
   sendsTo: Array<EventStream>;
   public rank: number;
@@ -226,7 +226,7 @@ export class EventStream {
      return outE;
    }
 
-   public mapE(f : (x:any) => any) : EventStream {
+   public mapE<U>(f : (x:T) => U) : EventStream<U> {
     
     return new EventStream([this],function(pulse) {
       pulse.value = f(pulse.value);
@@ -241,7 +241,7 @@ export class EventStream {
   }
 
   // Only produces events that match the given predicate.
-  public filterE(pred : (x:any) => bool) : EventStream {
+  public filterE(pred : (x:T) => bool) : EventStream<T> {
     
     // Can be a bindE
     return new EventStream([this], function(pulse) {
