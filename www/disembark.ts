@@ -200,54 +200,12 @@ function selectedRow(table) {
   .filterE(function(src) { return src !== false; });
 }
 
-/**
- * @param {Application} dataById
- */
-function createLinks(loginData, dataById, comment) {
-  var elts = [ ];
-  var i = comment.indexOf('#');
-  while (i !== -1) {
-    var j = comment.indexOf(';', i);
-    if (j === -1) {
-      break;
-    }
-    elts.push(comment.slice(0, i)); // Exclude #
-    // To lookup the id, excludes both # and ;
-    var maybeLink = comment.slice(i + 1, j); 
-    if (dataById[maybeLink]) {
-      var href = '/#' + escape(JSON.stringify({ app: maybeLink }));
-      // unsafeHref includes this user's capabilities.
-      var unsafeHref = 
-        '/#' + escape(JSON.stringify({ app: maybeLink,
-                                       loginData: loginData }));
-      // When anchor is copied, it does not have the user's caps. When anchor
-      // is clicked, it's invoked with the user's caps and then rewritten back
-      // to href.
-      var anchor = F.A({ href: href, target: '_blank' }, 
-                     F.TEXT(dataById[maybeLink].lastName));
-      anchor.addEventListener('click', function() {
-        anchor.href = unsafeHref;
-        window.setTimeout(function() { anchor.href = href; }, 0);
-      }, false);
-      elts.push(anchor);
-    }
-    else {
-      elts.push(comment.slice(i, j + 1)); // Include both # and ; 
-    }
-    comment = comment.slice(j + 1); // Exclude ;
-  }
-  elts.push(comment);
-  return elts;
-}
-
-function dispComment(loginData, dataById) {
-  return function(comment) {
-    return F.DIVClass('row',
-             F.DIVClass('comment cell',
-               F.DIV(comment.reviewerName),
-               F.DIV(F.TEXT(util.relativeDate(comment.timestamp))),
-               F.DIVSty({}, createLinks(loginData, dataById, comment.text))));
-  }
+function dispComment(comment) {
+  return F.DIVClass('row',
+           F.DIVClass('comment cell',
+             F.DIV(comment.reviewerName),
+             F.DIV(F.TEXT(util.relativeDate(comment.timestamp))),
+             F.DIVSty({}, comment.text)));
 }
 
 function highlightPane(reviewers, highlightedBy, highlightCap) {
@@ -330,13 +288,13 @@ function dispCommentPane(loginData, reviewers, data, fields, comments) {
   function fn(arg) {
     var post = F.INPUT({ className: 'fill', type: 'button', value: 'Send' });
     var commentDisp = F.DIVSty({ className: 'table' },
-      [arg.comments.map(dispComment(loginData, dataById))]);
+      [arg.comments.map(dispComment)]);
     var newPosts = F.clicksE(post).mapE(function(){
       var compose = <HTMLTextAreaElement>getEltById('composeTextarea');
       var c = compose.value;
       compose.value = '';
       commentDisp.appendChild(
-        dispComment(loginData, dataById)({ 
+        dispComment({ 
           reviewerName: loginData.friendlyName,
           text: c,
           timestamp: Math.floor((new Date()).valueOf() / 1000)
@@ -401,7 +359,7 @@ function dataMap(data) {
 function loadData(urlArgs, loginData, data) { 
   /** @type {Array.<Cols.TextCol>} */
   var fields = [
-    new Cols.IdCol('embarkId', 'Link', true),
+    new Cols.TextCol('embarkId', 'Id', true),
     new Cols.StarCol(loginData.revId, 'highlight', 'Starred', true),
     new Cols.TextCol('firstName','First Name', false),
     new Cols.TextCol('lastName', 'Last Name', true),

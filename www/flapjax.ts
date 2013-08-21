@@ -8,7 +8,6 @@ export interface HTMLAttribs {
   }
 }
 
-import FX = module ("./fx")
 import PQ = module("./priorityQueue")
 
 ///////////////////////////////////////////////////////////////////////////////

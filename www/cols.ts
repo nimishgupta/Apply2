@@ -87,27 +87,6 @@ export interface Filter {
 
 }
 
-export class IdCol extends TextCol {
-
-  constructor(label, friendly, initVis) {
-    super(label, friendly, initVis);
-  }
-
-  display(obj) : HTMLElement {
-    var val = obj[this.label_];
-    var link = F.DIVSty({ className: 'buttonLink' }, [val]);
-    F.extractEventE(link, 'click').mapE(function() {
-    // TODO(arjun): remove this feature
-    var compose = <HTMLTextAreaElement> document.getElementById('composeTextarea');
-    if (compose) {
-      compose.value = compose.value + ' #' + val + '; ';
-    }
-    });
-    return link;
-  }
-
-}
-
 /**
  * @constructor
  * @extends {TextCol}
@@ -115,7 +94,7 @@ export class IdCol extends TextCol {
  * @param {string} friendly
  * @param {boolean} initVis
  */
- export class EnumCol extends IdCol {
+ export class EnumCol extends TextCol {
 
   elems_: { [id: string] : any };
 
