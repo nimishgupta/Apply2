@@ -9,6 +9,7 @@ import (
 	"os"
 	"sample"
 	"server"
+	"umass"
 )
 
 func keygen(file string) {
@@ -41,6 +42,20 @@ type Command struct {
 	Run func(args []string)
 	Short string
 	Usage string
+}
+
+var cmdUMassImport = &Command {
+	Run: func(args []string) {
+		if len(args) != 2 {
+			fmt.Printf("missing argument; 'apply2 help umassimport' for information")
+			return
+		}
+		dept := args[0]
+		file := args[1]
+		umass.ImportCSV(dept, file)
+	},
+	Short: "import CSV data from UMass",
+	Usage: "DEPT_ID FILENAME.CSV",
 }
 
 var cmdSample = &Command {
@@ -185,6 +200,7 @@ var commands = map[string]*Command{
 	"loadapps": cmdLoadApps,
 	"fastcgi": cmdFastCGI,
 	"testserver": cmdTestServer,
+	"umassimport": cmdUMassImport,
 }
 
 func main() {
