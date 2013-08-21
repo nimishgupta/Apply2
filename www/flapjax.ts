@@ -7,6 +7,10 @@ export interface HTMLAttribs {
 
   }
 }
+
+import FX = module ("./fx")
+import PQ = module("./priorityQueue")
+
 ///////////////////////////////////////////////////////////////////////////////
 // Miscellaneous functions
 
@@ -29,62 +33,6 @@ function encodeREST(obj) : string {
     }
   }
   return str;
-}
-
-interface KV {
-  k: number
-}
-
-// Priority, where elements have a field 'k' that determines ordering.
-class PQ<T extends KV> {
-  val : Array<T> ;
-  
-  constructor() {
-    this.val = []
-  }
-
-  public insert(kv : T) {
-    this.val.push(kv);
-    var kvpos = this.val.length-1;
-    while(kvpos > 0 && kv.k < this.val[Math.floor((kvpos-1)/2)].k) {
-      var oldpos = kvpos;
-      kvpos = Math.floor((kvpos-1)/2);
-      this.val[oldpos] = this.val[kvpos];
-      this.val[kvpos] = kv;
-    }
-  }
-
-  public isEmpty() : bool {
-    return this.val.length === 0; 
-  }
-  
-  public pop() : T {
-    if(this.val.length === 1) {
-      return this.val.pop();
-    }
-    var ret = this.val.shift();
-    this.val.unshift(this.val.pop());
-    var kvpos = 0;
-    var kv = this.val[0];
-    while(1) { 
-      var leftChild = (kvpos*2+1 < this.val.length ? this.val[kvpos*2+1].k : kv.k+1);
-      var rightChild = (kvpos*2+2 < this.val.length ? this.val[kvpos*2+2].k : kv.k+1);
-      if(leftChild > kv.k && rightChild > kv.k)
-      break;
-
-      if(leftChild < rightChild) {
-        this.val[kvpos] = this.val[kvpos*2+1];
-        this.val[kvpos*2+1] = kv;
-        kvpos = kvpos*2+1;
-      }
-      else {
-        this.val[kvpos] = this.val[kvpos*2+2];
-        this.val[kvpos*2+2] = kv;
-        kvpos = kvpos*2+2;
-      }
-    }
-    return ret;
-  }
 }
 
 //////////////////////////////////////////////////////////////////////////////
@@ -118,7 +66,7 @@ interface P {
 //propagatePulse: Pulse * Array Node -> 
 //Send the pulse to each node 
 var propagatePulse = function (pulse, node) {
-  var queue = new PQ<P>(); //topological queue for current timestep
+  var queue = new PQ.PQ<P>(); //topological queue for current timestep
 
   queue.insert({k:node.rank,n:node,v:pulse});
 
@@ -134,12 +82,12 @@ var propagatePulse = function (pulse, node) {
   }
 };
 
-export class EventStream<T> {
+export class EventStream {
   updater : any;
-  sendsTo: Array<EventStream>;
+  sendsTo: Array<any>;
   public rank: number;
 
-  constructor (nodes : Array<EventStream>, updater : any) {
+  constructor (nodes /* : EventStream<any>[] */, updater : any) {
     this.updater = updater;
     this.sendsTo = [];
     this.rank = ++lastRank;
@@ -154,7 +102,7 @@ export class EventStream<T> {
   }
 
   // note: does not add flow as counting for rank nor updates parent ranks
-  public attachListener(dependent : EventStream) {
+  public attachListener(dependent /*: EventStream<any> */) {
 
     this.sendsTo.push(dependent);
   
@@ -169,7 +117,7 @@ export class EventStream<T> {
   }
 
   //note: does not remove flow as counting for rank nor updates parent ranks
-  private removeListener(dependent : EventStream) {
+  private removeListener(dependent /*: EventStream<any>*/) {
     var foundSending = false;
     for (var i = 0; i < this.sendsTo.length && !foundSending; i++) {
       if (this.sendsTo[i] === dependent) {
@@ -180,7 +128,7 @@ export class EventStream<T> {
     return foundSending;
   }
 
-  public mergeE(...args : Array<EventStream>) {
+  public mergeE(...args /*: Array<EventStream<any>>*/) {
     return internalE([this].concat(args));
   }
 
@@ -197,7 +145,7 @@ export class EventStream<T> {
     });
   }
 
-  public bindE(k : (v:any) => EventStream) {
+  public bindE(k /*: (v:any) => EventStream<T> */) {
     /* m.sendsTo resultE
      * resultE.sendsTo prevE
      * prevE.sendsTo returnE
@@ -226,7 +174,7 @@ export class EventStream<T> {
      return outE;
    }
 
-   public mapE<U>(f : (x:T) => U) : EventStream<U> {
+   public mapE(f /*: (x:T) => U*/) /*: EventStream<U> */ {
     
     return new EventStream([this],function(pulse) {
       pulse.value = f(pulse.value);
@@ -234,14 +182,8 @@ export class EventStream<T> {
       });
   }
 
-  public notE() { 
-    return this.mapE(function(v) { 
-      return !v; 
-      }); 
-  }
-
   // Only produces events that match the given predicate.
-  public filterE(pred : (x:T) => bool) : EventStream<T> {
+  public filterE(pred /*: (x:T) => bool*/) /*: EventStream<T> */{
     
     // Can be a bindE
     return new EventStream([this], function(pulse) {
@@ -310,7 +252,27 @@ export class EventStream<T> {
    public switchE() {
     return this.bindE(function(v) { return v; });
   }
+/**
+   * Filters out repeated events that are equal (JavaScript's <code>===</code>).
+   *
+   * @param {*=} optStart initial value (optional)
+   * @returns {EventStream}
+   */
+   public filterRepeatsE(optStart) {
+    var hadFirst = optStart === undefined ? false : true;
+    var prev = optStart;
 
+    return this.filterE(function (v) {
+      if (!hadFirst || prev !== v) {
+        hadFirst = true;
+        prev = v;
+        return true;
+      }
+      else {
+        return false;
+      }
+      });
+  }
 /**
  * Propagates signals from this event stream after <code>time</code>
  * milliseconds.
@@ -364,28 +326,6 @@ export class EventStream<T> {
     return new EventStream([this], function (pulse) {
       pulse.value = valueB.valueNow(); // TODO: glitch
       return pulse;
-      });
-  }
-
-  /**
-   * Filters out repeated events that are equal (JavaScript's <code>===</code>).
-   *
-   * @param {*=} optStart initial value (optional)
-   * @returns {EventStream}
-   */
-   public filterRepeatsE(optStart) {
-    var hadFirst = optStart === undefined ? false : true;
-    var prev = optStart;
-
-    return this.filterE(function (v) {
-      if (!hadFirst || prev !== v) {
-        hadFirst = true;
-        prev = v;
-        return true;
-      }
-      else {
-        return false;
-      }
       });
   }
 
@@ -465,7 +405,7 @@ export class EventStream<T> {
    * @returns {EventStream} an event stream carrying objects with three
    * fields: the request, the response, and the xhr object.
    */
-   private xhrWithBody (method, url : string) : EventStream {
+   private xhrWithBody (method, url : string) /*: EventStream<any> */{
     var respE = receiverE();
     this.mapE(function(body) {
       var xhr = new XMLHttpRequest();
@@ -494,7 +434,7 @@ export class EventStream<T> {
     return this.xhrWithBody('POST', url);
   }
 
-   public GET(url : string) : EventStream {
+   public GET(url : string) /*: EventStream<any> */ {
     var respE = receiverE();
     this.mapE(function(urlParams) {
       var xhr = new XMLHttpRequest();
