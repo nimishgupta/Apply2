@@ -272,13 +272,13 @@ func CreateSampleScores(dept *model.Dept) {
 }
 
 func Populate(dept *model.Dept) {
-	var applications []model.Application
+	var applications []model.EmbarkApplication
 	err := json.Unmarshal([]byte(sampleData), &applications)
 	if err != nil {
 		panic(err)
 	}
 	for _, app := range applications {
-		err = dept.NewApplication(app)
+		err = dept.NewApplication(&app)
 		if err != nil {
 			panic(err)
 		}

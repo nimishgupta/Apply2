@@ -438,7 +438,7 @@ func initSMTP(r io.Reader) smtp.Auth {
 	return smtp.PlainAuth("", user, pass, host)
 }
 
-func Serve(deptPath string, deptName string, isTesting bool) {
+func Serve(deptPath string, isTesting bool) {
 	keyFile := deptPath + "/private.key"
 	fi, err := os.Lstat(keyFile)
 	if err != nil {
@@ -451,7 +451,7 @@ func Serve(deptPath string, deptName string, isTesting bool) {
 	p := deptPath + "/docs/"
 	deptDocPath = &p
 
-	_dept, err := model.LoadDept("localhost", "5984", deptName)
+	_dept, err := model.LoadDept("localhost", "5984")
 	if err != nil {
 		panic(err)
 	}

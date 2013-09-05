@@ -28,8 +28,8 @@ func keygen(file string) {
 	}
 }
 
-func deleteDept(deptName string) {
-	dept, err := model.LoadDept("localhost", "5984", deptName)
+func deleteDept() {
+	dept, err := model.LoadDept("localhost", "5984")
 	if err != nil {
 		panic(fmt.Sprintf("department does not exist %v", err))
 	}
@@ -60,12 +60,11 @@ var cmdUMassImport = &Command {
 
 var cmdSample = &Command {
 	Run: func(args [] string) {
-		if len(args) != 1 {
-			fmt.Printf("missing argument; 'apply2 help sample' for information")
+		if len(args) != 0 {
+			fmt.Printf("too many arguments; 'apply2 help sample' for information")
 			return
 		}
-		deptName := args[0]
-		dept, err := model.NewDept("localhost", "5984", deptName)
+		dept, err := model.NewDept("localhost", "5984")
 		if err != nil {
 			panic(err)
 		}
@@ -87,18 +86,18 @@ var cmdKeygen = &Command {
 
 var cmdDeleteDept = &Command {
 	Run: func (args []string) {
-		if len(args) != 1 {
-			fmt.Printf("missing argument; 'apply2 help deletedept' for information")
+		if len(args) != 0 {
+			fmt.Printf("too many arguments; 'apply2 help deletedept' for information")
 			return
 		}
-		deleteDept(args[0])
+		deleteDept()
 	},
 	Short: "permanently delete a department from the database",
 }
 
 var cmdNewDept = &Command {
 	Run: func(args []string) {
-		_, err := model.NewDept("localhost", "5984", os.Args[2])
+		_, err := model.NewDept("localhost", "5984")
 		if err != nil {
 			panic(err)
 		}
@@ -108,13 +107,13 @@ var cmdNewDept = &Command {
 
 var cmdNewReviewer = &Command {
 	Short: "create a new reviewer account",
-	Usage: `DEPT_ID USERNAME PASSWORD "Full Name"`,
+	Usage: `USERNAME PASSWORD "Full Name"`,
 	Run: func(args []string) {
-		dept, err := model.LoadDept("localhost", "5984", args[0])
+		dept, err := model.LoadDept("localhost", "5984")
 		if err != nil {
 			panic(err)
 		}
-		dept.NewReviewer(model.ReviewerId(args[1]), args[3], args[2])
+		dept.NewReviewer(model.ReviewerId(args[0]), args[2], args[1])
 		if err != nil {
 			panic(err)
 		}
@@ -123,9 +122,9 @@ var cmdNewReviewer = &Command {
 
 var cmdLoadApps = &Command {
 	Short: "load applicant information",
-	Usage: `DEPT_ID DEPTH_PATH`,
+	Usage: `DEPT_PATH`,
 	Run: func(args []string) {
-		src, err := ioutil.ReadFile(args[1])
+		src, err := ioutil.ReadFile(args[0])
 		if err != nil {
 			panic(err)
 		}
@@ -134,7 +133,7 @@ var cmdLoadApps = &Command {
 		if err != nil {
 			panic(err)
 		}
-		dept, err := model.LoadDept("localhost", "5984", args[0])
+		dept, err := model.LoadDept("localhost", "5984")
 		if err != nil {
 			panic(err)
 		}
@@ -149,17 +148,17 @@ var cmdLoadApps = &Command {
 
 var cmdFastCGI = &Command {
 	Short: "run apply2 FastCGI server",
-	Usage: "DEPT_ID DEPT_DIR",
+	Usage: "DEPT_DIR",
 	Run: func(args []string) {
-		server.Serve(args[1], args[0], false)
+		server.Serve(args[0], false)
 	},
 }
 
 var cmdTestServer = &Command {
 	Short: "run a test server",
-	Usage: `DEPT_ID DEPT_PATH`,
+	Usage: `DEPT_PATH`,
 	Run: func(args []string) {
-		server.Serve(args[1], args[0], true)
+		server.Serve(args[0], true)
 	},
 }
 

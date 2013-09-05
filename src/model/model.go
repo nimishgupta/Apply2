@@ -10,11 +10,11 @@ import (
 import db "code.google.com/p/couch-go"
 import ldap "github.com/tonnerre/go-ldap"
 
-const applicationsSuffix = "_applications"
-const reviewersSuffix = "_reviewers"
-const commentsSuffix = "_comments"
-const highlightsSuffix = "_highlights"
-const scoresSuffix = "_scores"
+const applicationsSuffix = "applications"
+const reviewersSuffix = "reviewers"
+const commentsSuffix = "comments"
+const highlightsSuffix = "highlights"
+const scoresSuffix = "scores"
 
 var dbSuffixes = [...]string{applicationsSuffix, reviewersSuffix, commentsSuffix,
 	highlightsSuffix, scoresSuffix}
@@ -66,7 +66,6 @@ type Score struct {
 }
 
 type Dept struct {
-	couchPrefix  string
 	appDB        *db.Database
 	reviewerDB   *db.Database
 	commentsDB   *db.Database
@@ -98,20 +97,20 @@ func (self *Dept) databases() []*db.Database {
 		self.highlightsDB, self.scoresDB})
 }
 
-func NewDept(host string, port string, prefix string) (dept *Dept, err error) {
-	_, err = db.NewDatabase(host, port, prefix+applicationsSuffix)
+func NewDept(host string, port string) (dept *Dept, err error) {
+	_, err = db.NewDatabase(host, port, applicationsSuffix)
 	if err != nil {
 		return nil, err
 	}
-	_, err = db.NewDatabase(host, port, prefix+reviewersSuffix)
+	_, err = db.NewDatabase(host, port, reviewersSuffix)
 	if err != nil {
 		return nil, err
 	}
-	commentsDB, err := db.NewDatabase(host, port, prefix+commentsSuffix)
+	commentsDB, err := db.NewDatabase(host, port, commentsSuffix)
 	if err != nil {
 		return nil, err
 	}
-	highlightsDB, err := db.NewDatabase(host, port, prefix+highlightsSuffix)
+	highlightsDB, err := db.NewDatabase(host, port, highlightsSuffix)
 	if err != nil {
 		return nil, err
 	}
@@ -168,7 +167,7 @@ func NewDept(host string, port string, prefix string) (dept *Dept, err error) {
     return r;
   }`
 
-	scoresDB, err := db.NewDatabase(host, port, prefix+scoresSuffix)
+	scoresDB, err := db.NewDatabase(host, port, scoresSuffix)
 	if err != nil {
 		return nil, err
 	}
@@ -190,33 +189,33 @@ func NewDept(host string, port string, prefix string) (dept *Dept, err error) {
 		return nil, err
 	}
 
-	dept, err = LoadDept(host, port, prefix)
+	dept, err = LoadDept(host, port)
 	return
 }
 
-func LoadDept(host string, port string, prefix string) (*Dept, error) {
-	appDb, error := db.NewDatabase(host, port, prefix+applicationsSuffix)
+func LoadDept(host string, port string,) (*Dept, error) {
+	appDb, error := db.NewDatabase(host, port, applicationsSuffix)
 	if error != nil {
 		return nil, error
 	}
-	reviewerDb, error := db.NewDatabase(host, port, prefix+reviewersSuffix)
+	reviewerDb, error := db.NewDatabase(host, port, reviewersSuffix)
 	if error != nil {
 		return nil, error
 	}
-	commentsDb, error := db.NewDatabase(host, port, prefix+commentsSuffix)
+	commentsDb, error := db.NewDatabase(host, port, commentsSuffix)
 	if error != nil {
 		return nil, error
 	}
-	highlightsDb, error := db.NewDatabase(host, port, prefix+highlightsSuffix)
+	highlightsDb, error := db.NewDatabase(host, port, highlightsSuffix)
 	if error != nil {
 		return nil, error
 	}
-	scoresDb, error := db.NewDatabase(host, port, prefix+scoresSuffix)
+	scoresDb, error := db.NewDatabase(host, port, scoresSuffix)
 	if error != nil {
 		return nil, error
 	}
 
-	dept := &Dept{prefix, &appDb, &reviewerDb, &commentsDb, &highlightsDb,
+	dept := &Dept{&appDb, &reviewerDb, &commentsDb, &highlightsDb,
 		&scoresDb}
 	for _, deptDB := range dept.databases() {
 		if !deptDB.Exists() {
