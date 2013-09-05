@@ -8,6 +8,217 @@ export interface Filter {
   disabled: any
 }
 
+export class TextFilter implements Filter {
+  public elt : HTMLElement;
+  public fn : any;
+  public ser : any;
+  public disabled : any;
+
+  constructor(init : string, friendly : string, label : string) {
+    this.elt = F.INPUT({ type: 'text', placeholder: friendly, value: init });
+    var text = F.$B(this.elt);
+    this.fn = text.liftB(function(search) {
+      return function(obj) {
+        if (search === '') { 
+          return true;
+        }
+        return obj[label].toLowerCase().indexOf(search.toLowerCase()) !== -1;
+      };
+      });
+    this.ser = text.liftB(function(t) { return { t: 'Text', v: t } });
+    this.disabled = F.constantB(false);
+  }
+}
+
+
+export class EnumFilter implements Filter {
+  public elt : HTMLElement;
+  public fn : any;
+  public ser : any;
+  public disabled : any;
+
+  constructor(init : string, friendly : string, label : string, elems : any) {
+    var opts = Object.keys(elems).map(function(s) { 
+      if (init === s) {
+        return F.OPTION({ value: s, selected: 'selected' }, F.TEXT(s));
+      }
+      else {
+        return F.OPTION({ value: s }, F.TEXT(s));
+      }  
+      });
+    var select = F.SELECTSty({}, opts);
+    var sel = F.$B(select);
+    this.fn = sel.liftB(function(selection) {
+      return function(obj) { 
+        return obj[label] === selection;
+      };     
+      });
+    this.elt = F.DIV(F.TEXT(friendly), select);
+    this.disabled = F.constantB(false),
+    this.ser = sel.liftB(function(selV) { return { t: 'Enum', v: selV }; });
+  }
+}
+
+export class SetFilter implements Filter {
+  public elt : HTMLElement;
+  public fn : any;
+  public ser : any;
+  public disabled : any;
+
+  constructor(init : string, friendly : string, label : string, elems : any) {
+    var opts = Object.keys(elems).map(function(s) {
+      if (init === s) {
+        return F.OPTION({ value: s, selected: 'selected' }, F.TEXT(s));
+      }
+      else {
+        return F.OPTION({ value: s }, F.TEXT(s));
+      }  
+      });
+    var select = F.SELECTSty({}, opts);
+    var sel = F.$B(select);
+    var fn = sel.liftB(function(selection) {
+      return function(obj) { 
+        return obj[label].indexOf(selection) !== -1;
+      };     
+      });
+    var elt = F.DIV(F.TEXT(friendly), select);
+    return { fn: fn, elt: elt,
+      disabled: F.constantB(false),
+      // TODO(arjun): shouldn't it be t: 'Set' ??
+      ser:  sel.liftB(function(selV) { return { t: 'Enum', v: selV }; })
+    };
+  }
+}
+
+export class NumFilter implements Filter {
+  public elt : HTMLElement;
+  public fn : any;
+  public ser : any;
+  public disabled : any;
+
+  // @param {{min: string, max: string}=} init
+  constructor (init, friendly : string, label : string) {
+    var min = F.INPUT({
+      type: 'text',
+      placeholder: 'min', 
+      value: init ? init.min : ''
+    });
+    var max = F.INPUT({
+      type: 'text', 
+      placeholder: 'max',
+      value: init ? init.max : '' 
+    });
+    var minB = F.$B(min);
+    var maxB = F.$B(max);
+    this.fn = F.liftB(function(minV, maxV) {
+      minV = parseFloat(minV);
+      maxV = parseFloat(maxV);
+      return function(obj) { 
+        var passesMin = isNaN(minV) || obj[label] >= minV;
+        var passesMax = isNaN(maxV) || obj[label] <= maxV;
+        return passesMin && passesMax;
+      };
+      }, minB, maxB);
+    this.ser = F.liftB(function(minV, maxV) {
+      return { t: 'Num', v: { min: minV, max: maxV } };
+      }, minB, maxB);
+    this.elt = F.DIV(F.TEXT(friendly), 
+      F.TEXT(': ['), min, F.TEXT(', '), max, F.TEXT(']'));
+    this.disabled = F.constantB(false);
+  }
+}
+
+export class CannotFilter implements Filter {
+  public elt : HTMLElement;
+  public fn : any;
+  public ser : any;
+  public disabled : any;
+
+  // @param {{min: string, max: string}=} init
+  constructor (typ : string, message : string) {
+    this.fn = F.constantB(function() { return true; }), 
+    this.elt = F.DIV(F.TEXT(message));
+    this.disabled = F.constantB(true);
+    this.ser = F.constantB({ t: typ });
+  }
+}
+
+export class StarFilter implements Filter {
+  public elt : HTMLElement;
+  public fn : any;
+  public ser : any;
+  public disabled : any;
+
+  /**
+  * @param {boolean=} init
+  * @return {{ fn: F.Behavior, elt: Node }}
+  */
+  constructor(init : bool, friendly : string, label : string) {
+    var input = F.INPUT({
+      type: 'checkbox', 
+      checked: init === undefined ? true : init
+    });
+    var checked = F.$B(input);
+    this.elt = F.SPAN(input, F.TEXT(friendly));    
+    this.fn = checked.liftB(function(sel) {
+      return function(obj) {
+        return (obj[label].length > 0) === sel;
+      };
+    });
+    this.disabled = F.constantB(false);
+    this.ser = checked.liftB(function(v) { return { t: 'Star', v: v } });
+  }
+}
+
+export class ScoreFilter implements Filter {
+  public elt : HTMLElement;
+  public fn : any;
+  public ser : any;
+  public disabled : any;
+
+  /**
+   * @param {{min: string, max: string, rev: string}=} init
+   */
+   constructor(init, friendly : string, label : string, reviewers, myRevId) {
+    var min = F.INPUT({ type: 'text',placeholder: 'min',
+     value: init ? init.min : ''  });
+    var max = F.INPUT({ type: 'text', placeholder: 'max',
+      value: init ? init.max : ''  });
+    var initRev = init ? init.rev : myRevId;
+    var rev = F.SELECTSty({}, Object.keys(reviewers).map(function(id) {
+      var s = id === initRev ? 'selected' : '';
+      return F.OPTION({ value: id, selected: s }, reviewers[id]); 
+      }));
+    var minB = F.$B(min);
+    var maxB = F.$B(max);
+    var revB = F.$B(rev);
+    this.fn = F.liftB(function(minV, maxV, revV) {
+      minV = parseFloat(minV);
+      maxV = parseFloat(maxV);
+      return function(obj) { 
+        if (obj[label] === undefined) {
+          return false;
+        }
+        var score = obj[label][revV];
+        if (score === undefined) {
+          return false;
+        }
+        var passesMin = isNaN(minV) || score  >= minV;
+        var passesMax = isNaN(maxV) || score <= maxV;
+        return passesMin && passesMax;
+      };
+      }, minB, maxB, revB);
+    this.ser = F.liftB(function(minV, maxV, revV) {
+      return { t: 'Num', v: { min: minV, max: maxV, rev: revV } };
+      }, minB, maxB, revB);
+    this.elt = F.DIV(F.TEXT(friendly), 
+      F.TEXT(': ['), min, F.TEXT(', '), 
+      max, F.TEXT('] by '), rev);
+    this.disabled = F.constantB(false);
+  }
+}
+
+
 /**
  * @param {string} label name
  * @param {string} friendly name
@@ -25,19 +236,7 @@ export interface Filter {
   }
 
   makeFilter(init) : Filter {
-    var elt = F.INPUT({ type: 'text', placeholder: this.friendly, value: init });
-    var label = this.label_;
-    var text = F.$B(elt);
-    var fn = text.liftB(function(search) {
-      return function(obj) {
-        if (search === '') { 
-          return true;
-        }
-        return obj[label].toLowerCase().indexOf(search.toLowerCase()) !== -1;
-      };
-      });
-    var ser = text.liftB(function(t) { return { t: 'Text', v: t } });
-    return { fn: fn, elt: elt, ser: ser, disabled: F.constantB(false) };
+    return new TextFilter(init, this.friendly, this.label_);
   }
 
   compare(o1, o2) : number {
@@ -72,19 +271,18 @@ export interface Filter {
   display(obj) : HTMLElement {
     var val = obj[this.label_];
     if (typeof val === 'string') {
-    // TODO(arjun): used to use goog.string.isEmpty
-    if (val === "") {
-      return F.DIVSty({ className: 'err' }, [F.TEXT('Missing Value')]);
+      // TODO(arjun): used to use goog.string.isEmpty
+      if (val === "") {
+        return F.DIVSty({ className: 'err' }, [F.TEXT('Missing Value')]);
+      }
+      else {
+        return F.DIV(val);
+      }
     }
     else {
-      return F.DIV(val);
+      return F.SPANSty({ className: 'err' }, [F.TEXT('Unexpected value')]);
     }
   }
-  else {
-    return F.SPANSty({ className: 'err' }, [F.TEXT('Unexpected value')]);
-  }
-}
-
 }
 
 /**
@@ -107,13 +305,13 @@ export interface Filter {
     this.elems_[obj[this.label_]] = true;
     var val = obj[this.label_];
     if (typeof val === 'string') {
-    // TODO(arjun): goog.string.isEmpty
-    if (val === "") {
-      return F.DIVSty({ className: 'err' }, [F.TEXT('Missing Value')]) ;
-    }
-    else {
-      return F.DIV(val);
-    }
+      // TODO(arjun): goog.string.isEmpty
+      if (val === "") {
+        return F.DIVSty({ className: 'err' }, [F.TEXT('Missing Value')]) ;
+      }
+      else {
+        return F.DIV(val);
+      }
     }
     else {
       return F.SPANSty({ className: 'err' }, [F.TEXT('Unexpected value')]);
@@ -121,29 +319,7 @@ export interface Filter {
   }
 
   makeFilter(init) : Filter {
-    var label = this.label_;
-    var opts = Object.keys(this.elems_).map(function(s) { 
-      if (init === s) {
-        return F.OPTION({ value: s, selected: 'selected' }, F.TEXT(s));
-      }
-      else {
-        return F.OPTION({ value: s }, F.TEXT(s));
-      }  
-      });
-    var select = F.SELECTSty({}, opts);
-    var sel = F.$B(select);
-    var fn = sel.liftB(function(selection) {
-      return function(obj) { 
-        return obj[label] === selection;
-      };     
-      });
-    var elt = F.DIV(F.TEXT(this.friendly), select);
-    return { 
-      fn: fn, 
-      elt: elt,
-      disabled: F.constantB(false),
-      ser:  sel.liftB(function(selV) { return { t: 'Enum', v: selV }; })
-    };
+    return new EnumFilter(init, this.friendly, this.label_, this.elems_);
   }
 }
 
@@ -168,36 +344,15 @@ export class SetCol extends TextCol {
   }
 
   makeFilter (init) {
-    var label = this.label_;
-    var opts = Object.keys(this.elems_).map(function(s) {
-      if (init === s) {
-        return F.OPTION({ value: s, selected: 'selected' }, F.TEXT(s));
-      }
-      else {
-        return F.OPTION({ value: s }, F.TEXT(s));
-      }  
-      });
-    var select = F.SELECTSty({}, opts);
-    var sel = F.$B(select);
-    var fn = sel.liftB(function(selection) {
-      return function(obj) { 
-        return obj[label].indexOf(selection) !== -1;
-      };     
-      });
-    var elt = F.DIV(F.TEXT(this.friendly), select);
-    return { fn: fn, elt: elt,
-      disabled: F.constantB(false),
-      ser:  sel.liftB(function(selV) { return { t: 'Enum', v: selV }; })
-    };
+    return new SetFilter(init, this.friendly, this.label_, this.elems_);
   }
 
   compare(o1, o2) {
     var v1 = o1[this.label_];
     var v2 = o2[this.label_];
-  // TODO: discriminate further when lengths are equal
-  return v1.length - v2.length;
-}
-
+    // TODO: discriminate further when lengths are equal
+    return v1.length - v2.length;
+  }
 }
 
 /**
@@ -213,56 +368,23 @@ export class SetCol extends TextCol {
     super(label, friendly, initVis);
   }
 
-
-/**
- * @param {{min: string, max: string}=} init
- */
- makeFilter(init) {
-  var label = this.label_;
-
-  var min = F.INPUT({ 
-    type: 'text', placeholder: 'min', value: init ? init.min : ''
-    });
-  var max = F.INPUT({
-    type: 'text', 
-    placeholder: 'max',
-    value: init ? init.max : ''  });
-  var minB = F.$B(min);
-  var maxB = F.$B(max);
-  var fn = F.liftB(function(minV, maxV) {
-    minV = parseFloat(minV);
-    maxV = parseFloat(maxV);
-    return function(obj) { 
-      var passesMin = isNaN(minV) || obj[label] >= minV;
-      var passesMax = isNaN(maxV) || obj[label] <= maxV;
-      return passesMin && passesMax;
-    };
-    }, minB, maxB);
-  var ser = F.liftB(function(minV, maxV) {
-    return { t: 'Num', v: { min: minV, max: maxV } };
-    }, minB, maxB);
-  var elt = F.DIV(F.TEXT(this.friendly), 
-    F.TEXT(': ['), min, F.TEXT(', '), max, F.TEXT(']'));
-  return { 
-    fn: fn, 
-    elt: elt,
-    disabled: F.constantB(false),
-    ser: ser
-  };
-}
-
-display(obj) {
-  if (!obj.hasOwnProperty(this.label_)) {
-    return F.SPANSty({ className: 'err' }, [F.TEXT('Missing')]);
+  makeFilter(init) {
+    return new NumFilter(init, this.friendly, this.label_);
   }
-  var val = obj[this.label_];
-  if (typeof val !== 'number') {
-    return F.SPANSty({ className: 'err' }, [F.TEXT('Unexpected value')]);
+
+  display(obj) {
+    if (!obj.hasOwnProperty(this.label_)) {
+      return F.SPANSty({ className: 'err' }, [F.TEXT('Missing')]);
+    }
+    var val = obj[this.label_];
+    if (typeof val !== 'number') {
+      return F.SPANSty({ className: 'err' }, [F.TEXT('Unexpected value')]);
+    }
+    // TODO: do this numerically?
+    var truncTwo = '[0-9]+(\\.[0-9]{0,2})?';
+    return F.DIVSty({ className: 'num' },
+      [F.TEXT(String(val).match(truncTwo)[0])]);
   }
-  // TODO: do this numerically?
-  var truncTwo = '[0-9]+(\\.[0-9]{0,2})?';
-  return F.DIVSty({ className: 'num' }, [F.TEXT(String(val).match(truncTwo)[0])]);
-}
 
 }
 
@@ -300,20 +422,14 @@ display(obj) {
   }
 
   makeFilter() {
-    return { 
-      fn: F.constantB(function() { return true; }), 
-    elt: F.DIV(F.TEXT("Cannot filter on materials")), // TODO: fixme
-    disabled: F.constantB(true),
-    ser: F.constantB({ t: 'Mats' })
-  };
-}
+    return new CannotFilter("Mats", "Cannot filter on materials");
+  }
 
-compare(o1, o2) {
-  var v1 = o1[this.label_];
-  var v2 = o2[this.label_];
-  return v1.length - v2.length;
-}
-
+  compare(o1, o2) {
+    var v1 = o1[this.label_];
+    var v2 = o2[this.label_];
+    return v1.length - v2.length;
+  }
 }
 
 /**
@@ -334,24 +450,8 @@ compare(o1, o2) {
 
   }
 
-/**
- * @param {boolean=} init
- * @return {{ fn: F.Behavior, elt: Node }}
- */
- makeFilter(init) {
-  var this_ = this;
-  var input = F.INPUT({ type: 'checkbox', 
-    checked: init === undefined ? true : init });
-  var elt = F.SPAN(input, F.TEXT(this.friendly));
-  var checked = F.$B(input);
-  var fn = checked.liftB(function(sel) {
-    return function(obj) {
-      return (obj[this_.label_].length > 0) === sel;
-    };
-    });
-
-  return { fn: fn, elt: elt, disabled: F.constantB(false),
-    ser: checked.liftB(function(v) { return { t: 'Star', v: v } }) };
+  makeFilter(init) {
+    return new StarFilter(init, this.friendly, this.label_);
   }
 
   display(val) : HTMLElement {
@@ -405,54 +505,10 @@ compare(o1, o2) {
         }));
   }
 
-// TODO: sorting and filtering on scores
-/**
- * @param {{min: string, max: string, rev: string}=} init
- */
- makeFilter(init) {
-  var this_ = this;
-  var label = this.label_;
-
-  var min = F.INPUT({ type: 'text', placeholder: 'min',
-    value: init ? init.min : ''  });
-  var max = F.INPUT({ type: 'text', placeholder: 'max',
-    value: init ? init.max : ''  });
-  var initRev = init ? init.rev : this_.myRevId_;
-  var rev = F.SELECTSty({}, Object.keys(this.reviewers_).map(function(id) {
-    var s = id === initRev ? 'selected' : '';
-    return F.OPTION({ value: id, selected: s }, this_.reviewers_[id]); 
-    }));
-  var minB = F.$B(min);
-  var maxB = F.$B(max);
-  var revB = F.$B(rev);
-  var fn = F.liftB(function(minV, maxV, revV) {
-    minV = parseFloat(minV);
-    maxV = parseFloat(maxV);
-    return function(obj) { 
-      if (obj[this_.label_] === undefined) {
-        return false;
-      }
-      var score = obj[this_.label_][revV];
-      if (score === undefined) {
-        return false;
-      }
-      var passesMin = isNaN(minV) || score  >= minV;
-      var passesMax = isNaN(maxV) || score <= maxV;
-      return passesMin && passesMax;
-    };
-    }, minB, maxB, revB);
-  var ser = F.liftB(function(minV, maxV, revV) {
-    return { t: 'Num', v: { min: minV, max: maxV, rev: revV } };
-    }, minB, maxB, revB);
-  var elt = F.DIV(F.TEXT(this.friendly), 
-    F.TEXT(': ['), min, F.TEXT(', '), 
-    max, F.TEXT('] by '), rev);
-  return { 
-    fn: fn, 
-    elt: elt,
-    disabled: F.constantB(false),
-    ser: ser
-  };
-}
+  // TODO: sorting and filtering on scores
+   makeFilter(init) {
+     return new ScoreFilter(init, this.friendly, this.label_,
+      this.reviewers_, this.myRevId_);
+  }
 
 }
