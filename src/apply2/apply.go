@@ -12,7 +12,7 @@ import (
 	"umass"
 )
 
-func keygen(file string) {
+func rand16() []byte {
 	key := [16]byte{}
 	num, err := rand.Read(key[:])
 	if err != nil {
@@ -21,8 +21,11 @@ func keygen(file string) {
 	if num != 16 {
 		panic(fmt.Sprintf("Only read %v bytes from Rand.read", num))
 	}
+	return key[:]
+}
 
-	err = ioutil.WriteFile(file, key[:], 0600)
+func keygen(file string) {
+	err := ioutil.WriteFile(file, rand16(), 0600)
 	if err != nil {
 		panic(err)
 	}
@@ -148,17 +151,35 @@ var cmdLoadApps = &Command {
 
 var cmdFastCGI = &Command {
 	Short: "run apply2 FastCGI server",
-	Usage: "DEPT_DIR",
+	Usage: "[KEY]",
 	Run: func(args []string) {
-		server.Serve(args[0], false)
+		if len(args) == 0 {
+			fmt.Printf("Generated random key. Any running sessions will fail.\n")
+			server.Serve(rand16(), false)
+		} else if len(args) == 1 {
+			key, err := ioutil.ReadFile(args[0])
+			if err != nil { panic (err) }
+			server.Serve(key , false)
+		}	else {
+			fmt.Print("Invalid arguments. Run 'apply2 help'.\n")
+		}
 	},
 }
 
 var cmdTestServer = &Command {
 	Short: "run a test server",
-	Usage: `DEPT_PATH`,
+	Usage: `[KEY]`,
 	Run: func(args []string) {
-		server.Serve(args[0], true)
+		if len(args) == 0 {
+			fmt.Printf("Generated random key. Any running sessions will fail.\n")
+			server.Serve(rand16(), true)
+		} else if len(args) == 1 {
+			key, err := ioutil.ReadFile(args[0])
+			if err != nil { panic (err) }
+			server.Serve(key , true)
+		}	else {
+			fmt.Print("Invalid arguments. Run 'apply2 help'.\n")
+		}
 	},
 }
 

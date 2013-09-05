@@ -533,15 +533,15 @@ func (self *Dept) URLOfUpload(name string) string {
 
 // name is the name to use on the server and path is the relative path to
 // the file on disk. In many 
-func (self *Dept) UploadFile(name string, path string) (bool, error) {
+func (self *Dept) UploadFile(name string, path string) error {
 	file, err := os.Open(path)
 	if err != nil {
-		return false, err
+		return err
 	}
 
 	req, err := http.NewRequest("PUT", self.URLOfUpload(name), file)
 	if err != nil {
-		return false, err
+		return err
 	}
 
 	req.Header["Content-Type"] = []string{"application/pdf"}
@@ -549,11 +549,15 @@ func (self *Dept) UploadFile(name string, path string) (bool, error) {
 	client := &http.Client{}
 	resp, err := client.Do(req)
 	if err != nil {
-		return false, err
+		return err
 	}
 
-	return resp.StatusCode == 201, nil
+	if resp.StatusCode != 201 {
+		return fmt.Errorf("got status %d from CouchDB. Full response: %v",
+			resp.StatusCode, resp)
+	}
 
+	return nil
 }
 
 func (self *Dept) DownloadFile(name string, w http.ResponseWriter) error {

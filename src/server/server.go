@@ -4,7 +4,6 @@ import (
 	"caps"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"log"
 	"model"
 	"net"
@@ -443,15 +442,7 @@ func initSMTP(r io.Reader) smtp.Auth {
 	return smtp.PlainAuth("", user, pass, host)
 }
 
-func Serve(deptPath string, isTesting bool) {
-	keyFile := deptPath + "/private.key"
-	fi, err := os.Lstat(keyFile)
-	if err != nil {
-		panic(err)
-	}
-	if !!fi.IsDir() {
-		panic(err)
-	}
+func Serve(key []byte, isTesting bool) {
 
 	_dept, err := model.LoadDept("localhost", "5984")
 	if err != nil {
@@ -459,10 +450,6 @@ func Serve(deptPath string, isTesting bool) {
 	}
 	dept = _dept
 
-	key, err := ioutil.ReadFile(keyFile)
-	if err != nil {
-		panic(err)
-	}
 	capServer = caps.NewCryptCapServer("/caps/", key, key)
 	capServer.HandleFunc(dataKey, dataHandler)
 	capServer.HandleFunc(materialKey, materialHandler)

@@ -31,9 +31,9 @@ dependencies.
 
 - Create and run a sample department:
 
-        $ ./apply2 sample mydept
-        $ ./apply2 newreviewer mydept scooby redbull64 "Scooby Doo"
-        $ ./apply2 testserver mydept sample
+        $ ./apply2 sample
+        $ ./apply2 newreviewer scooby redbull64 "Scooby Doo"
+        $ ./apply2 testserver
 
 - Visit http://localhost:8080/disembark.html using Firefox, Chrome, or Safari (Internet Explorer
   will not work).

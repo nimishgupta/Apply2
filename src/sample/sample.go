@@ -287,8 +287,15 @@ func Populate(dept *model.Dept) {
 
 	fmt.Println("Creating reviewers ...")
 	CreateSampleReviewers(dept)
-	dept.UploadFile("asb-resume.pdf", "sample/docs/asb-resume.pdf")
-	dept.UploadFile("asb-transcript.pdf", "sample/docs/asb-transcript.pdf")
+	if err := dept.UploadFile("asb-resume.pdf", "sample/asb-resume.pdf"); err != nil {
+		fmt.Printf("Could not upload sample/asb-resume.pdf\n%v\n", err)
+		return
+	}
+	if err := dept.UploadFile("asb-transcript.pdf", "sample/asb-transcript.pdf"); err != nil {
+		fmt.Printf("Could not upload sample/asb-transcript.pdf\n", err)
+		return
+	}
+
 
 	fmt.Println("Creating sample comments ...")
 	LoadRandomComments(dept)
