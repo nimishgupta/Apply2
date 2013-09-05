@@ -6,6 +6,9 @@ import (
 	"fmt"
 	"log"
 	"util"
+	"os"	
+	"net/http"
+	"io"
 )
 import db "code.google.com/p/couch-go"
 import ldap "github.com/tonnerre/go-ldap"
@@ -71,6 +74,7 @@ type Dept struct {
 	commentsDB   *db.Database
 	highlightsDB *db.Database
 	scoresDB     *db.Database
+	uploadsDB	   *db.Database
 }
 
 type CommentRow struct {
@@ -94,7 +98,7 @@ type HighlightsByAppResult struct {
 
 func (self *Dept) databases() []*db.Database {
 	return ([]*db.Database{self.appDB, self.reviewerDB, self.commentsDB,
-		self.highlightsDB, self.scoresDB})
+		self.highlightsDB, self.scoresDB, self.uploadsDB})
 }
 
 func NewDept(host string, port string) (dept *Dept, err error) {
@@ -114,6 +118,11 @@ func NewDept(host string, port string) (dept *Dept, err error) {
 	if err != nil {
 		return nil, err
 	}
+	_, err = db.NewDatabase(host, port, "uploads")
+	if err != nil {
+		return nil, err
+	}
+
 	commentsDesign := map[string]interface{}{
 		"_id":      "_design/myviews",
 		"language": "javascript",
@@ -214,9 +223,13 @@ func LoadDept(host string, port string,) (*Dept, error) {
 	if error != nil {
 		return nil, error
 	}
+	uploadsDB, error := db.NewDatabase(host, port, "uploads")
+	if error != nil {
+		return nil, error
+	}
 
 	dept := &Dept{&appDb, &reviewerDb, &commentsDb, &highlightsDb,
-		&scoresDb}
+		&scoresDb, &uploadsDB}
 	for _, deptDB := range dept.databases() {
 		if !deptDB.Exists() {
 			return nil, errors.New(fmt.Sprintf("database %v missing", deptDB.Name))
@@ -510,5 +523,45 @@ func (self *Dept) SetScore(score *Score) error {
 		return errors.New("attempt to delete score that does not exist")
 	}
 	_, _, err = self.scoresDB.InsertWith(score, _id)
+	return err
+}
+
+func (self *Dept) URLOfUpload(name string) string {
+	return fmt.Sprintf("http://%s:%s/%s/%s/file", 
+		self.uploadsDB.Host, self.uploadsDB.Port, self.uploadsDB.Name, name)	
+}
+
+// name is the name to use on the server and path is the relative path to
+// the file on disk. In many 
+func (self *Dept) UploadFile(name string, path string) (bool, error) {
+	file, err := os.Open(path)
+	if err != nil {
+		return false, err
+	}
+
+	req, err := http.NewRequest("PUT", self.URLOfUpload(name), file)
+	if err != nil {
+		return false, err
+	}
+
+	req.Header["Content-Type"] = []string{"application/pdf"}
+
+	client := &http.Client{}
+	resp, err := client.Do(req)
+	if err != nil {
+		return false, err
+	}
+
+	return resp.StatusCode == 201, nil
+
+}
+
+func (self *Dept) DownloadFile(name string, w http.ResponseWriter) error {
+	resp, err := http.Get(self.URLOfUpload(name))
+	if err != nil {
+		return err
+	}
+	// Using http.ServeContent would play better with caching
+	_, err = io.Copy(w, resp.Body)
 	return err
 }

@@ -30,7 +30,6 @@ const resetPasswordKey = "resetPassword"
 
 var capServer caps.CapServer
 var dept *model.Dept
-var deptDocPath *string
 var mailAuth smtp.Auth
 
 type FetchCommentsEnv struct {
@@ -125,6 +124,7 @@ func materialHandler(key string, w http.ResponseWriter, r *http.Request) {
 
 	log.Printf("%v downloaded %v", key, untrustedDocName)
 
+	// TODO(arjun): this is no longer a file path, but a URL fragment, I think
 	docDir, docName := filepath.Split(untrustedDocName)
 	if docDir != "" {
 		log.Printf("%v SECURITY ERROR %v trying to read document %v", r.RemoteAddr,
@@ -138,7 +138,12 @@ func materialHandler(key string, w http.ResponseWriter, r *http.Request) {
 	w.Header().Add("Content-Disposition",
 		fmt.Sprintf("inline; filename = %q", docName))
 
-	http.ServeFile(w, r, *deptDocPath+docName)
+	err = dept.DownloadFile(docName, w)
+	if err != nil {
+		log.Printf("dept.DownloadFile(%v, _) error: %v", docName, err)
+		w.WriteHeader(http.StatusBadRequest)
+		r.Close = true
+	}
 }
 
 func postCommentHandler(v string, w http.ResponseWriter, r *http.Request) {
@@ -447,9 +452,6 @@ func Serve(deptPath string, isTesting bool) {
 	if !!fi.IsDir() {
 		panic(err)
 	}
-
-	p := deptPath + "/docs/"
-	deptDocPath = &p
 
 	_dept, err := model.LoadDept("localhost", "5984")
 	if err != nil {

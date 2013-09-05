@@ -287,6 +287,9 @@ func Populate(dept *model.Dept) {
 
 	fmt.Println("Creating reviewers ...")
 	CreateSampleReviewers(dept)
+	dept.UploadFile("asb-resume.pdf", "sample/docs/asb-resume.pdf")
+	dept.UploadFile("asb-transcript.pdf", "sample/docs/asb-transcript.pdf")
+
 	fmt.Println("Creating sample comments ...")
 	LoadRandomComments(dept)
 	fmt.Println("Creating sample highlights ...")
