@@ -1,5 +1,12 @@
 import F = module("./flapjax");
 
+export interface Filter {
+  fn : any;
+  elt : HTMLElement;
+  ser : any;
+  disabled: any
+}
+
 export function deserialize(rec, i, ser) {
   switch (ser.t) {
     case 'And':

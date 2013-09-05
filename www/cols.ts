@@ -1,14 +1,7 @@
 import F = module("./flapjax");
 import Filter = module("./filter")
 
-export interface Filter {
-  fn : any;
-  elt : HTMLElement;
-  ser : any;
-  disabled: any
-}
-
-export class TextFilter implements Filter {
+export class TextFilter implements Filter.Filter {
   public elt : HTMLElement;
   public fn : any;
   public ser : any;
@@ -31,7 +24,7 @@ export class TextFilter implements Filter {
 }
 
 
-export class EnumFilter implements Filter {
+export class EnumFilter implements Filter.Filter {
   public elt : HTMLElement;
   public fn : any;
   public ser : any;
@@ -59,7 +52,7 @@ export class EnumFilter implements Filter {
   }
 }
 
-export class SetFilter implements Filter {
+export class SetFilter implements Filter.Filter {
   public elt : HTMLElement;
   public fn : any;
   public ser : any;
@@ -90,7 +83,7 @@ export class SetFilter implements Filter {
   }
 }
 
-export class NumFilter implements Filter {
+export class NumFilter implements Filter.Filter {
   public elt : HTMLElement;
   public fn : any;
   public ser : any;
@@ -128,7 +121,7 @@ export class NumFilter implements Filter {
   }
 }
 
-export class CannotFilter implements Filter {
+export class CannotFilter implements Filter.Filter {
   public elt : HTMLElement;
   public fn : any;
   public ser : any;
@@ -143,7 +136,7 @@ export class CannotFilter implements Filter {
   }
 }
 
-export class StarFilter implements Filter {
+export class StarFilter implements Filter.Filter {
   public elt : HTMLElement;
   public fn : any;
   public ser : any;
@@ -170,7 +163,7 @@ export class StarFilter implements Filter {
   }
 }
 
-export class ScoreFilter implements Filter {
+export class ScoreFilter implements Filter.Filter {
   public elt : HTMLElement;
   public fn : any;
   public ser : any;
@@ -235,7 +228,7 @@ export class ScoreFilter implements Filter {
     this.initVis = initVis;
   }
 
-  makeFilter(init) : Filter {
+  makeFilter(init) : Filter.Filter {
     return new TextFilter(init, this.friendly, this.label_);
   }
 
@@ -318,7 +311,7 @@ export class ScoreFilter implements Filter {
     }
   }
 
-  makeFilter(init) : Filter {
+  makeFilter(init) : Filter.Filter {
     return new EnumFilter(init, this.friendly, this.label_, this.elems_);
   }
 }
