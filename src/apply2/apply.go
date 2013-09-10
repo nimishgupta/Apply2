@@ -49,16 +49,15 @@ type Command struct {
 
 var cmdUMassImport = &Command {
 	Run: func(args []string) {
-		if len(args) != 2 {
+		if len(args) != 1 {
 			fmt.Printf("missing argument; 'apply2 help umassimport' for information")
 			return
 		}
-		dept := args[0]
-		file := args[1]
-		umass.ImportCSV(dept, file)
+		file := args[0]
+		umass.ImportCSV(file)
 	},
 	Short: "import CSV data from UMass",
-	Usage: "DEPT_ID FILENAME.CSV",
+	Usage: "FILENAME.CSV",
 }
 
 var cmdSample = &Command {

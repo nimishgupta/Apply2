@@ -4,11 +4,12 @@ import (
 	"log"
   "encoding/csv"
   "os"
-  "fmt"
+  "model"
+  "strconv"
 )
 
 type Application struct {
-	PersonId     string    `json:"PersonId"`
+	PersonId     string   `json:"PersonId"`
 	FirstName    string   `json:"firstName"`
 	LastName     string   `json:"lastName"`
 	Gender	     string   `json:"gender"`
@@ -17,15 +18,19 @@ type Application struct {
   Phone        string   `json:"phone"`
 	Email        string   `json:"email"`
 	AcademicPlanCode      []string  `json:academicPlanCode` // 1 & 2
-  GREAnalytic  float64  `json:"greAnalytic"`
-  OldGREMath  float64 `json:"oldGREMath"`
-  OldGREVerbal float64 `json:"oldGREVerbal"`
-  NewGREMath float64 `json:"NewGREMath"`
-  NewGREVerbal float64 `json:"NewGREVerbal"`
-  UndergradGPA float64 `json:"undergradGPA"`
-  MajorGPA    float64 `json:"MajorGPA"`
-  GradGPA float64 `json:"GradGPA"`
+  GREAnalytic  *float64  `json:"greAnalytic"`
+  OldGREMath  *float64 `json:"oldGREMath"`
+  OldGREVerbal *float64 `json:"oldGREVerbal"`
+  NewGREMath *float64 `json:"NewGREMath"`
+  NewGREVerbal *float64 `json:"NewGREVerbal"`
+  UndergradGPA *float64 `json:"undergradGPA"`
+  MajorGPA    *float64 `json:"MajorGPA"`
+  GradGPA *float64 `json:"GradGPA"`
   ExternalOrgs []string `json:"externalOrgs"`
+}
+
+func (self *Application) Id() string {
+	return self.PersonId
 }
 
 // If we don't get exactly this header, we will abort.
@@ -44,16 +49,44 @@ var hdrIndex = fieldIndices()
 
 // use hdrIndex to lookup row by field. Field must be in expectedHdr.
 func index(field string, row []string) string {
-	n := hdrIndex[field]
+	n, found := hdrIndex[field]
+	if !found {
+		log.Panicf("index got field %v", field)	
+	}
   if n >= len(row) {
   	return ""
   }
   return row[n]
 }
 
+func removeBlanks(arr []string) []string {
+	ret := make([]string,0,len(arr));
+	for _, v := range(arr) {
+		if v != "" {
+			ret = append(ret, v)
+		}
+	}
+	return ret;
+}
+
 func rowToStruct(row []string) *Application {
 	i := func(f string) string { return index(f, row) }
+  num := func(f string) *float64 {
+  	s := i(f);
+		if s == "" {
+		  return nil;
+		}
 
+		x, err := strconv.ParseFloat(s, 64)
+		if err != nil {
+			log.Printf("Could not convert %v to a number (field %v)\n%v\n", s,f,err)
+			return nil;
+		}
+
+		return &x;
+
+  }
+  
   return &Application{
 		PersonId: i("Person Id"),
 		FirstName: i("First Name"),
@@ -62,18 +95,19 @@ func rowToStruct(row []string) *Application {
 	  AdmitTerm: i("Admit Term"),
 	  Country: i("Country"),
 	  Phone: i("Preferred Phone"),
-		/*Email        *string   `json:"email"`
-		AcademicPlanCode      *[]string  `json:academicPlanCode` // 1 & 2
-	  GREAnalytic  *float64  `json:"greAnalytic"`
-	  OldGREMath  *float64 `json:"oldGREMath"`
-	  OldGREVerbal *float64 `json:"oldGREVerbal"`
-	  NewGREMath *float64 `json:"NewGREMath"`
-	  NewGREVerbal *float64 `json:"NewGREVerbal"`
-	  UndergradGPA *float64 `json:"undergradGPA"`
-	  MajorGPA    *float64 `json:"MajorGPA"`
-	  GradGPA *float64 `json:"GradGPA"`
-	  ExternalOrgs *[]string `json:"externalOrgs"`
-	  */
+	  Email: i("Preferred Email"),
+	  AcademicPlanCode: removeBlanks([]string{i("Academic Plan Code"),
+	  								            			 		  i("Academic Plan Code 2")}),
+    GREAnalytic: num("GRE Analytic"),
+    OldGREMath: num("Old GRE Math"),
+    OldGREVerbal: num("Old GRE Verbal"),
+    NewGREMath: num("New GRE Math"),
+    NewGREVerbal: num("New GRE Verbal"),
+    UndergradGPA: num("Undergrad GPA (Self-reported)"),
+    GradGPA: num("Grad GPA (Self-reported)"),
+    ExternalOrgs: removeBlanks([]string{i("External Org 1"),
+    										                i("External Org 2"),
+         							    			        i("External Org 3")}),
 	}
 }
 
@@ -94,7 +128,9 @@ func isHeaderOK(header []string) bool {
 	return true
 }
 
-func ImportCSV(dept string, csvFile string) {
+func ImportCSV(csvFile string) {
+	log.Printf("Inverted index: %a", hdrIndex);
+
 	f, err := os.Open(csvFile)
 	if err != nil {
 		log.Fatalf("Could not open %v\n%v\n", csvFile, err)
@@ -117,7 +153,21 @@ func ImportCSV(dept string, csvFile string) {
   	os.Exit(1)
   }
 
+	dept, err := model.LoadDept("localhost", "5984")
+	if err != nil {
+		log.Fatalf("Could not load department.\n%v\n", err)
+		os.Exit(1)
+	}
+
+  for _, row := range(lines[1:]) {
+  	app := rowToStruct(row)
+  	err = dept.NewApplication(app)
+  	if err != nil {
+  		log.Printf("Error creating application %v.\n%v\n", app, err)
+  	}
+  }
+
   log.Printf("%v records in %v", len(lines), csvFile)
-	fmt.Printf("%#v", lines[0])
+	
 
 }

@@ -367,7 +367,7 @@ func (self *Dept) AuthReviewer(id ReviewerId, pw string) (*Reviewer, error) {
 		userdn := fmt.Sprintf("uid=%v,cn=users,dc=cs,dc=umass,dc=edu", id)
 		err = l.Bind(userdn, pw)
 		if err != nil {
-			log.Printf("AuthReviewer(%v, _) - %v", id, err)
+			log.Printf("(LDAP) AuthReviewer(%v, _) - %v", id, err)
 			return nil, errors.New("invalid password")
 		}
 	} else if bytes.Equal(rev.PasswordHash, util.HashString(pw)) == false {
