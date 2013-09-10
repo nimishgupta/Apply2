@@ -6,6 +6,8 @@ import (
   "os"
   "model"
   "strconv"
+  "regexp"
+  "fmt"
 )
 
 type Application struct {
@@ -129,8 +131,6 @@ func isHeaderOK(header []string) bool {
 }
 
 func ImportCSV(csvFile string) {
-	log.Printf("Inverted index: %a", hdrIndex);
-
 	f, err := os.Open(csvFile)
 	if err != nil {
 		log.Fatalf("Could not open %v\n%v\n", csvFile, err)
@@ -168,6 +168,66 @@ func ImportCSV(csvFile string) {
   }
 
   log.Printf("%v records in %v", len(lines), csvFile)
-	
+}
 
+// It should be completely obvious that these regular expressions do not overlap.
+var letterRegexp = 
+  regexp.MustCompile(`^GCMP_(\d+)_(?:\d+)_(.*)_GS_Adm_Recommendation\.pdf$`)
+var resumeRegexp = 
+  regexp.MustCompile(`^GCMP_(\d+)_(?:\d+)_(.*)_GS_Adm_Resume\.pdf$`)
+var personalStatementRegexp = 
+  regexp.MustCompile(`^GCMP_(\d+)_(?:\d+)_(.*)_GS_Adm_Pers_Statemnt\.pdf$`)
+var transcriptRegexp = 
+  regexp.MustCompile(`^GCMP_(\d+)_(?:\d+)_(.*)_GS_Adm_(?:Unofficial_)?Transcript\.pdf$`)
+var applicationRegexp = 
+  regexp.MustCompile(`^GCMP_(\d+)_(?:\d+)_(.*)_GS_Adm_Appl\.pdf$`)
+var writingSampleRegexp = 
+  regexp.MustCompile(`^GCMP_(\d+)_(?:\d+)_(.*)_GS_Adm_Writing_Sample\.pdf$`)
+var miscRegexp =
+  regexp.MustCompile(`^GCMP_(\d+)_(?:\d+)_(.*)_GS_Adm_Misc\.pdf$`)
+var financialRegexp =
+  regexp.MustCompile(`^GCMP_(\d+)_(?:\d+)_(.*)_GS_Adm_Fin_Statement\.pdf$`)
+var testScoresRegexp =
+  regexp.MustCompile(`^GCMP_(\d+)_(?:\d+)_(.*)_GS_Adm_Test_Scores\.pdf$`)
+
+func ImportPDFs(path string) {
+	log.Printf("Reading materials from %v.\n", path);
+
+	dir, err := os.Open(path)
+	if err != nil {
+		log.Fatalf("Could not open directory %v.\n%v", dir, err);
+		return;
+	}
+
+	files, err := dir.Readdir(-1);
+	if err != nil {
+		log.Fatalf("Could not read all files.\n%v\n", err);
+		return;
+	}
+
+	for _, file := range(files) {
+		name := file.Name()
+		if m := letterRegexp.FindStringSubmatch(name); m != nil {
+			continue;
+		}	else if m := resumeRegexp.FindStringSubmatch(name); m != nil {
+			continue;
+		}	else if m := transcriptRegexp.FindStringSubmatch(name); m != nil {
+			continue;
+		}	else if m := personalStatementRegexp.FindStringSubmatch(name); m != nil {
+			continue;
+		}	else if m := applicationRegexp.FindStringSubmatch(name); m != nil {
+			continue;
+		}	else if m := writingSampleRegexp.FindStringSubmatch(name); m != nil {
+			continue;
+		}	else if m := miscRegexp.FindStringSubmatch(name); m != nil {
+			continue;
+		}	else if m := financialRegexp.FindStringSubmatch(name); m != nil {
+			continue;
+		}	else if m := testScoresRegexp.FindStringSubmatch(name); m != nil {
+			continue;
+		}	else {
+			fmt.Printf("Unclassified: %s\n", name);
+		}
+
+	}
 }

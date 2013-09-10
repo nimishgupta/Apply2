@@ -60,6 +60,19 @@ var cmdUMassImport = &Command {
 	Usage: "FILENAME.CSV",
 }
 
+var cmdUMassPDFs = &Command {
+	Run: func(args []string) {
+		if len(args) != 1 {
+			fmt.Printf("missing argument; 'apply2 help umasspdfs' for information")
+			return
+		}
+		file := args[0]
+		umass.ImportPDFs(file)
+	},
+	Short: "import PDF data from UMass",
+	Usage: "DIRECTORY NAME",
+}
+
 var cmdSample = &Command {
 	Run: func(args [] string) {
 		if len(args) != 0 {
@@ -220,6 +233,7 @@ var commands = map[string]*Command{
 	"fastcgi": cmdFastCGI,
 	"testserver": cmdTestServer,
 	"umassimport": cmdUMassImport,
+	"umasspdfs": cmdUMassPDFs,
 }
 
 func main() {
