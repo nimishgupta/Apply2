@@ -24,8 +24,8 @@ fi
 AC_MSG_CHECKING([Go version])
 GO_VERSION=`go version`
 AC_MSG_RESULT($GO_VERSION)
-if [[ "$GO_VERSION" != "go version go1.0.3" ]]; then
-	AC_MSG_ERROR([Go 1.0.3 required])
+if [[ "$GO_VERSION" != "go version go1.1.2 darwin/amd64" ]]; then
+	AC_MSG_ERROR([Go 1.1.2 required])
 fi
 
 AC_MSG_CHECKING([for curl])
