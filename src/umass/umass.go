@@ -11,7 +11,7 @@ import (
 )
 
 type Application struct {
-	PersonId     string   `json:"PersonId"`
+	PersonId     string   `json:"personId"`
 	FirstName    string   `json:"firstName"`
 	LastName     string   `json:"lastName"`
 	Gender	     string   `json:"gender"`
@@ -26,8 +26,7 @@ type Application struct {
   NewGREMath *float64 `json:"NewGREMath"`
   NewGREVerbal *float64 `json:"NewGREVerbal"`
   UndergradGPA *float64 `json:"undergradGPA"`
-  MajorGPA    *float64 `json:"MajorGPA"`
-  GradGPA *float64 `json:"GradGPA"`
+  GradGPA *float64 `json:"gradGPA"`
   ExternalOrgs []string `json:"externalOrgs"`
 }
 

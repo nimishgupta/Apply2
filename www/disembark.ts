@@ -27,7 +27,7 @@ interface LoginResponse {
 }
 
 interface Application {
-  embarkId: number;
+  personId: number;
   lastName: string;
 }
 
@@ -91,7 +91,7 @@ function displayRow(obj, fields, filter) {
     return pred(obj);
   }));
   return F.DIVSty({ className: 'row',
-               'data-appId': obj.embarkId,
+               'data-appId': obj.personId,
                 style: { display: dispWhen } },
              fields.map(mkCell));
 }
@@ -348,9 +348,17 @@ function makeVis(field) {
 
 function dataMap(data) {
   var m = Object.create(null);
-  data.forEach(function(d) { m[d.embarkId] = d; });
+  data.forEach(function(d) { m[d.personId] = d; });
   return m;
 }
+
+/*
+                       gender: String,
+                       admitTerm: String,
+                       country: String,
+                       phone: String,
+                       email: String,
+*/
 
 /**
  * @param {LoginResponse} loginData
@@ -359,20 +367,27 @@ function dataMap(data) {
 function loadData(urlArgs, loginData, data) { 
   /** @type {Array.<Cols.TextCol>} */
   var fields = [
-    new Cols.TextCol('embarkId', 'Id', true),
+    new Cols.TextCol('personId', 'Id', true),
     new Cols.StarCol(loginData.revId, 'highlight', 'Starred', true),
     new Cols.TextCol('firstName','First Name', false),
     new Cols.TextCol('lastName', 'Last Name', true),
-    new Cols.TextCol('url','Email', false),
-    new Cols.EnumCol('country', 'Citizen', true),
-    new Cols.SetCol('areas', 'Areas', true),
-    new Cols.MatsCol('materials','Materials', loginData.materialsCap, true),
-    new Cols.MatsCol('recs', 'Recommendations', 
-                     loginData.materialsCap, true),
-    new Cols.NumCol('expectedRecCount', 'Recs Expected', false),
-    new Cols.NumCol('GPA', 'GPA', false),
-    new Cols.NumCol('GREMath', 'GRE Math', false),
-    new Cols.NumCol('GREVerbal', 'GRE Verbal', false),
+    new Cols.TextCol('gender', 'Gender', true),
+    new Cols.TextCol('admitTerm', 'Admit Term', false),
+    new Cols.TextCol('country', 'Country', true),
+    new Cols.TextCol('phone', 'Phone', false),
+    new Cols.TextCol('email','Email', false),
+    new Cols.SetCol('academicPlanCode', 'Academic Plan Code', false),
+    new Cols.NumCol('greAnalytic', 'GRE Analytic', false),
+    new Cols.NumCol('oldGREMath', 'GRE Math (Old)', false),
+    new Cols.NumCol('oldGREVerbal', 'GRE Verbal (Old)', false),
+    new Cols.NumCol('newGREMath', 'GRE Math (New)', false),
+    new Cols.NumCol('newGREVerbal', 'GRE Verbal (New)', false),
+    new Cols.NumCol('undergradGPA', 'GPA', false),
+    new Cols.NumCol('gradGPA', 'GPA (Graduate)', false),
+    new Cols.SetCol('externalOrgs', 'Institutions', true),
+    // new Cols.MatsCol('materials','Materials', loginData.materialsCap, true),
+    // new Cols.MatsCol('recs', 'Recommendations', loginData.materialsCap, true),
+    // new Cols.NumCol('expectedRecCount', 'Recs Expected', false),
     new Cols.ScoreCol('score_rating', 'Ratings', loginData.reviewers, 
                       loginData.revId, false),
     new Cols.NumCol('avgscore_rating', 'Average Rating', false)
