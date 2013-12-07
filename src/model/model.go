@@ -362,12 +362,6 @@ func (self *Dept) AuthReviewer(id ReviewerId, pw string) (*Reviewer, error) {
 	return &rev, nil
 }
 
-func (self *Dept) ReviewerExists(id ReviewerId) bool {
-	var rev Reviewer
-	_, err := self.reviewerDB.Retrieve(string(id), &rev)
-	return err == nil
-}
-
 func (self *Dept) GetReviewerById(revId ReviewerId) (*Reviewer, error) {
 	var rev Reviewer
 	_, err := self.reviewerDB.Retrieve(string(revId), &rev)
