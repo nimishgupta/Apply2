@@ -136,7 +136,7 @@ func materialHandler(key string, w http.ResponseWriter, r *http.Request) {
 	log.Printf("%v %v downloaded %v", r.RemoteAddr, key, docName)
 	w.Header().Add("Content-Disposition",
 		fmt.Sprintf("inline; filename = %q", docName))
-
+  w.Header().Add("Content-Type", "application/pdf")
 	err = dept.DownloadFile(docName, w)
 	if err != nil {
 		log.Printf("dept.DownloadFile(%v, _) error: %v", docName, err)
