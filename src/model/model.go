@@ -349,21 +349,15 @@ func (self *Dept) AuthReviewer(id ReviewerId, pw string) (*Reviewer, error) {
 		log.Printf("AuthReviewer(%v, _) - user does not exist", id)
 		return nil, err
 	}
-	// If the password is "" (blank), check against LDAP instead
-	if bytes.Equal(rev.PasswordHash, util.HashString("")) == true {
-		l, err := ldap.DialSSL("tcp", "directory.cs.umass.edu:636")
-		if err != nil {
-			log.Printf("AuthReviewer(%v, _) - %v", id, err)
-			return nil, errors.New("can't connect to ldap server")
-		}
-		userdn := fmt.Sprintf("uid=%v,cn=users,dc=cs,dc=umass,dc=edu", id)
-		err = l.Bind(userdn, pw)
-		if err != nil {
-			log.Printf("(LDAP) AuthReviewer(%v, _) - %v", id, err)
-			return nil, errors.New("invalid password")
-		}
-	} else if bytes.Equal(rev.PasswordHash, util.HashString(pw)) == false {
-		log.Printf("AuthReviewer(%v, _) - incorrect password", id)
+	l, err := ldap.DialSSL("tcp", "directory.cs.umass.edu:636")
+	if err != nil {
+		log.Printf("AuthReviewer(%v, _) - %v", id, err)
+		return nil, errors.New("can't connect to ldap server")
+	}
+	userdn := fmt.Sprintf("uid=%v,cn=users,dc=cs,dc=umass,dc=edu", id)
+	err = l.Bind(userdn, pw)
+	if err != nil {
+		log.Printf("(LDAP) AuthReviewer(%v, _) - %v", id, err)
 		return nil, errors.New("invalid password")
 	}
 	return &rev, nil
