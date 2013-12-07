@@ -1,7 +1,6 @@
 package model
 
 import (
-	"bytes"
 	"errors"
 	"fmt"
 	"log"
@@ -367,20 +366,6 @@ func (self *Dept) ReviewerExists(id ReviewerId) bool {
 	var rev Reviewer
 	_, err := self.reviewerDB.Retrieve(string(id), &rev)
 	return err == nil
-}
-
-func (self *Dept) ChangePassword(id ReviewerId, pw string) error {
-	var user Reviewer
-	_rev, err := self.reviewerDB.Retrieve(string(id), &user)
-	if err != nil {
-		return errors.New("invalid username")
-	}
-	if len(pw) < 5 {
-		return errors.New("password too short (six characters required)")
-	}
-	user.PasswordHash = util.HashString(pw)
-	_, err = self.reviewerDB.EditWith(user, string(id), _rev)
-	return err
 }
 
 func (self *Dept) GetReviewerById(revId ReviewerId) (*Reviewer, error) {
