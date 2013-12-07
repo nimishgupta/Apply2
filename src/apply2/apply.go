@@ -7,7 +7,6 @@ import (
 	"io/ioutil"
 	"model"
 	"os"
-	"sample"
 	"server"
 	"umass"
 )
@@ -71,21 +70,6 @@ var cmdUMassPDFs = &Command {
 	},
 	Short: "import PDF data from UMass",
 	Usage: "DIRECTORY NAME",
-}
-
-var cmdSample = &Command {
-	Run: func(args [] string) {
-		if len(args) != 0 {
-			fmt.Printf("too many arguments; 'apply2 help sample' for information")
-			return
-		}
-		dept, err := model.NewDept("localhost", "5984")
-		if err != nil {
-			panic(err)
-		}
-		sample.Populate(dept)
-	},
-	Short: "create a sample department",
 }
 
 var cmdKeygen = &Command {
@@ -224,7 +208,6 @@ func runCmdHelp(args []string) {
 }
 
 var commands = map[string]*Command{
-	"sample": cmdSample,
 	"keygen": cmdKeygen,
 	"deletedept": cmdDeleteDept,
 	"newdept": cmdNewDept,
