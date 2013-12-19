@@ -34,9 +34,6 @@
           <div style="display: table-cell">
             <input type="submit" id="login" value="Login" />
           </div>
-          <div style="display: table-cell">
-            <a id="forgot" href="#" class="buttonLink">Reset Password</a>
-          </div>
         </div>
       </div>
       <div id="loginPanelOut"></div>
@@ -48,7 +45,6 @@
       <div id="banner" class="hbox">
         <div>University of Massachusetts | School of Computer Science</div>
         <div id="friendly" class="flex1" style="text-align: right"></div>
-        <div><a href="#" id="pass">Change Password</a></div>
         <div><a href="#" id="logout">Logout</a></div>
       </div>
       <div id="showHideFilters" class="buttonLink">▼ Filters</div>
@@ -95,26 +91,6 @@
 
 </div>
 
-<div id="passwordPanel" style="display:none; background-color: white">
-
-  <div>Current password:<input id="pwOld" type="password"/></div>
-  <div>New password:<input id="pwNew1" type="password"/></div>
-  <div>Repat password:<input id="pwNew2" type="password"/></div>
-  <b><div id="pwStatus"></div></b>
-  <input type="button" value="Change Password" id="pwSet">
-  <div id="pwBack" class="buttonLink">Back</div>
-
-</div>
-
-<div id="resetPanel" style="display:none; background-color: white">
-
-  <div>New password:<input id="pwResetNew1" type="password"/></div>
-  <div>Repat password:<input id="pwResetNew2" type="password"/></div>
-  <b><div id="pwResetStatus"></div></b>
-  <input type="button" value="Change Password" id="pwResetSet">
-  <div id="pwResetBack" class="buttonLink">Back</div>
-
-</div>
 
 <script data-main="disembark" src="require.js"></script>
 </body>

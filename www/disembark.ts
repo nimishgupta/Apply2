@@ -2,7 +2,6 @@ import F = module("./flapjax");
 import filter = module("./filter")
 import Cols = module("./cols");
 import util = module("./util");
-import password = module("./password")
 
 // TODO(arjun): why needed?
 declare function escape(s : string) : string;
@@ -477,7 +476,6 @@ function loadData(urlArgs, loginData, data) {
 };
 
 var loginClicks = F.clicksE(getEltById('login'));
-var resetClicks = F.clicksE(getEltById('forgot'));
 
 var canLogin = false;
 
@@ -493,7 +491,6 @@ var update = F.receiverE();
  * @param {LoginResponse} loginData
  */
 function loggedIn(urlArgs, loginData : LoginResponse) {
-  password.setupPasswordChange(loginData);
 
   getEltById('friendly').appendChild(F.TEXT(loginData.friendlyName));
   var refresh = F.mergeE(F.oneE(true), update);
@@ -531,20 +528,10 @@ getEltById('logout').addEventListener('click', function(_) {
     delete urlArgs.loginData;
     loggedIn(urlArgs, loginData);
   }
-  else if (urlArgs.resetCap) {
-    password.passwordReset(urlArgs.resetCap);
-  }
   else {
     var loginResults = loginClicks.mapE(mkLogin)
       .JSONStringify()
       .POST('/login')
-      .index('response')
-      .JSONParse();
-    var resetResults = resetClicks
-      .mapE(function() { 
-          return { username: (<HTMLInputElement>getEltById('username')).value }; })
-      .JSONStringify()
-      .POST('/reset')
       .index('response')
       .JSONParse();
 
@@ -554,7 +541,7 @@ getEltById('logout').addEventListener('click', function(_) {
       loggedIn(urlArgs, result);
     });
     F.insertDomB(
-      F.DIV(F.TEXT(F.mergeE(loginResults, resetResults)
+      F.DIV(F.TEXT(loginResults
                     .mapE(function(r) { return r.msg || ''; })
                     .startsWith(''))),
       'loginPanelOut');
