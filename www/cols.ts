@@ -59,7 +59,7 @@ export class SetFilter implements Filter.Filter {
   public disabled : any;
 
   constructor(init : string, friendly : string, label : string, elems : any) {
-    var opts = Object.keys(elems).map(function(s) {
+    var opts = Object.keys(elems).sort().map(function(s) {
       if (init === s) {
         return F.OPTION({ value: s, selected: 'selected' }, F.TEXT(s));
       }
