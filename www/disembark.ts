@@ -68,32 +68,6 @@ function disp(visStyle, visible) {
   return visible.liftB(function(b) { return b ? visStyle : 'none'; });
 }
 
-/**
- * @param {Application} obj
- * @param {Array.<Cols.TextCol>} fields
- * @param {F.Behavior} filter
- *
- * @return {Node}
- */
-function displayRow(obj, fields, filter) {
-  /**
-   * @param {Cols.TextCol} field
-   */
-  function mkCell(field) {
-    return F.DIVSty({ 
-      'className': 'cell',
-      'style': { 'display': disp('table-cell',field.visible) } 
-    },
-    [field.display(obj)]);
-  }
-  var dispWhen = disp('table-row', filter.liftB(function(pred) {
-    return pred(obj);
-  }));
-  return F.DIVSty({ className: 'row',
-               'data-appId': obj.personId,
-                style: { display: dispWhen } },
-             fields.map(mkCell));
-}
 
 /**
  * @param {function(*,*): number} f
@@ -153,6 +127,33 @@ function highlightSelectedRow(newRow, oldRow) {
   }
   newRow.classList.add('selected');
   return newRow;
+}
+
+/**
+ * @param {Application} obj
+ * @param {Array.<Cols.TextCol>} fields
+ * @param {F.Behavior} filter
+ *
+ * @return {Node}
+ */
+function displayRow(obj, fields, filter) {
+  /**
+   * @param {Cols.TextCol} field
+   */
+  function mkCell(field) {
+    return F.DIVSty({ 
+      'className': 'cell',
+      'style': { 'display': disp('table-cell',field.visible) } 
+    },
+    [field.display(obj)]);
+  }
+  var dispWhen = disp('table-row', filter.liftB(function(pred) {
+    return pred(obj);
+  }));
+  return F.DIVSty({ className: 'row',
+               'data-appId': obj.personId,
+                style: { display: dispWhen } },
+             fields.map(mkCell));
 }
 
 /**
