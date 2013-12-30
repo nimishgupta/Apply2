@@ -373,18 +373,24 @@ func (self *Dept) AuthReviewer(id ReviewerId, pw string) (*Reviewer, error) {
 		log.Printf("AuthReviewer(%v, _) - user does not exist", id)
 		return nil, err
 	}
-	l, err := ldap.DialSSL("tcp", "directory.cs.umass.edu:636")
-	if err != nil {
-		log.Printf("AuthReviewer(%v, _) - %v", id, err)
-		return nil, errors.New("can't connect to ldap server")
-	}
-	userdn := fmt.Sprintf("uid=%v,cn=users,dc=cs,dc=umass,dc=edu", id)
-	err = l.Bind(userdn, pw)
-	if err != nil {
-		log.Printf("(LDAP) AuthReviewer(%v, _) - %v", id, err)
-		return nil, errors.New("invalid password")
-	}
-	return &rev, nil
+
+ // If you remove the "if true", the code stops working! I don't know why!!!
+  if true {
+    l, err := ldap.DialSSL("tcp", "directory.cs.umass.edu:636")
+    if err != nil {
+      log.Printf("AuthReviewer(%v, _) - %v", id, err)
+      return nil, errors.New("can't connect to ldap server")
+    }
+    userdn := fmt.Sprintf("uid=%v,cn=users,dc=cs,dc=umass,dc=edu", id)
+    err = l.Bind(userdn, pw)
+    if err != nil {
+      log.Printf("(LDAP) AuthReviewer(%v, _) - %v", id, err)
+      return nil, errors.New("invalid password")
+    }
+	  return &rev, nil
+  } 
+  
+   return nil, errors.New("must use LDAP")
 }
 
 func (self *Dept) GetReviewerById(revId ReviewerId) (*Reviewer, error) {
