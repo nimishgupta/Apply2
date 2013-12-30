@@ -272,6 +272,9 @@ export class ScoreFilter implements Filter.Filter {
         return F.DIV(val);
       }
     }
+    else if (typeof val === 'undefined') {
+        return F.DIV();
+    }
     else {
       return F.SPANSty({ className: 'err' }, [F.TEXT('Unexpected value')]);
     }
@@ -345,8 +348,8 @@ export class SetCol extends TextCol {
   }
 
   compare(o1, o2) {
-    var v1 = o1[this.label_];
-    var v2 = o2[this.label_];
+    var v1 = o1[this.label_] || [];
+    var v2 = o2[this.label_] || [];
     // TODO: discriminate further when lengths are equal
     return v1.length - v2.length;
   }

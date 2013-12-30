@@ -309,8 +309,8 @@ func (self *Dept) Applications(revId string) ([]map[string]interface{},
   // As reported by students. Assumes that there is a
   // record in applicants for each record in fromApp
   for _, row := range fromApps["rows"].([]interface{}) {
-    fromApp := row.(map[string]interface{})
-    id := fromApp["id"].(string)
+    fromApp := row.(map[string]interface{})["doc"].(map[string]interface{})
+    id := fromApp["_id"].(string)
     appMap[id]["areas"] = fromApp["areas"]
     appMap[id]["faculty"] = fromApp["faculty"]
     program, found := fromApp["program"]

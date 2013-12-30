@@ -366,7 +366,7 @@ function dataMap(data) {
 function loadData(urlArgs, loginData, data) { 
   /** @type {Array.<Cols.TextCol>} */
   var fields = [
-    new Cols.TextCol('personId', 'Id', true),
+    new Cols.TextCol('personId', 'Id', false),
     new Cols.StarCol(loginData.revId, 'highlight', 'Starred', true),
     new Cols.TextCol('firstName','First Name', false),
     new Cols.TextCol('lastName', 'Last Name', true),
@@ -375,6 +375,9 @@ function loadData(urlArgs, loginData, data) {
     new Cols.TextCol('country', 'Country', true),
     new Cols.TextCol('phone', 'Phone', false),
     new Cols.TextCol('email','Email', false),
+    new Cols.TextCol('program', 'Program', true),
+    new Cols.SetCol('areas', 'Areas', true),
+    new Cols.SetCol('faculty', 'Faculty', true),
     new Cols.SetCol('academicPlanCode', 'Academic Plan Code', false),
     new Cols.NumCol('greAnalytic', 'GRE Analytic', false),
     new Cols.NumCol('oldGREMath', 'GRE Math (Old)', false),
@@ -389,7 +392,7 @@ function loadData(urlArgs, loginData, data) {
     // new Cols.NumCol('expectedRecCount', 'Recs Expected', false),
     new Cols.ScoreCol('score_rating', 'Ratings', loginData.reviewers, 
                       loginData.revId, false),
-    new Cols.NumCol('avgscore_rating', 'Average Rating', false)
+    new Cols.NumCol('avgscore_rating', 'Average Rating', false),
   ];
   
   var vises = fields.map(function(f) : Node {
