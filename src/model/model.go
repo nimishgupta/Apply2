@@ -17,9 +17,10 @@ const reviewersSuffix = "reviewers"
 const commentsSuffix = "comments"
 const highlightsSuffix = "highlights"
 const scoresSuffix = "scores"
+const fromApplicantsSuffix = "from-applicants"
 
 var dbSuffixes = [...]string{applicationsSuffix, reviewersSuffix, commentsSuffix,
-	highlightsSuffix, scoresSuffix}
+	highlightsSuffix, scoresSuffix,fromApplicantsSuffix}
 
 var includeDocs = map[string](interface{}){"include_docs": true}
 
@@ -74,6 +75,7 @@ type Dept struct {
 	highlightsDB *db.Database
 	scoresDB     *db.Database
 	uploadsDB	   *db.Database
+  fromApplicantsDB *db.Database
 }
 
 type CommentRow struct {
@@ -226,9 +228,13 @@ func LoadDept(host string, port string,) (*Dept, error) {
 	if error != nil {
 		return nil, error
 	}
+	fromApplicantsDB, error := db.NewDatabase(host, port, "from-applicants")
+	if error != nil {
+		return nil, error
+	}
 
 	dept := &Dept{&appDb, &reviewerDb, &commentsDb, &highlightsDb,
-		&scoresDb, &uploadsDB}
+		&scoresDb, &uploadsDB, &fromApplicantsDB}
 	for _, deptDB := range dept.databases() {
 		if !deptDB.Exists() {
 			return nil, errors.New(fmt.Sprintf("database %v missing", deptDB.Name))
@@ -252,6 +258,11 @@ func (self *Dept) Applications(revId string) ([]map[string]interface{},
 	if err != nil {
 		return nil, err
 	}
+  var fromApps map[string]interface{}
+  err = self.fromApplicantsDB.Query("_all_docs", includeDocs, &fromApps)
+  if err != nil {
+    return nil, err
+  }
 	var scores map[string]interface{}
 	err = self.scoresDB.Query("_design/myviews/_view/byId",
 		includeDocs, &scores)
@@ -294,6 +305,20 @@ func (self *Dept) Applications(revId string) ([]map[string]interface{},
 
 		appMap[id]["highlight"] = make([]string, 0, 1)
 	}
+
+  // As reported by students. Assumes that there is a
+  // record in applicants for each record in fromApp
+  for _, row := range fromApps["rows"].([]interface{}) {
+    fromApp := row.(map[string]interface{})
+    id := fromApp["id"].(string)
+    appMap[id]["areas"] = fromApp["areas"]
+    appMap[id]["faculty"] = fromApp["faculty"]
+    program, found := fromApp["program"]
+    if found {
+      appMap[id]["program"] = program
+    }
+  }
+
 	for _, rawRow := range scores["rows"].([]interface{}) {
 		row := rawRow.(map[string]interface{})
 		score := row["doc"].(map[string]interface{})

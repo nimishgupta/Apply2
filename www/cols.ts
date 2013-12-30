@@ -71,7 +71,7 @@ export class SetFilter implements Filter.Filter {
     var sel = F.$B(select);
     var fn = sel.liftB(function(selection) {
       return function(obj) { 
-        return obj[label].indexOf(selection) !== -1;
+        return obj[label] !== null && obj[label].indexOf(selection) !== -1;
       };     
       });
     var elt = F.DIV(F.TEXT(friendly), select);
@@ -327,6 +327,10 @@ export class SetCol extends TextCol {
 
   display (val) {
     var this_ = this;
+    if (val[this.label_] === null) {
+      return F.DIVSty({ className: 'set' }, []);
+    }
+
     val[this.label_].forEach(function(v) {
       this_.elems_[v] = true;
       });
@@ -399,7 +403,39 @@ export class SetCol extends TextCol {
     this.materialsCap_ = materialsCap;
   }
 
-  display(val) {
+  isComplete(val) {
+    if (val[this.label_] === null) {
+      return false;
+    }
+    var hasTranscript = false;
+    var hasResume = false;
+    var hasPersonalStatement = false;
+    var hasApplication = false;
+
+    val[this.label_].forEach(function(v) {
+      if (v.text.match(/^Transcript/) != null) {
+        hasTranscript = true;
+      }
+      if (v.text.match(/^Resume/) != null) {
+        hasResume = true;
+      }
+      if (v.text.match(/^Personal statement/) != null) {
+        hasPersonalStatement = true;
+      }
+
+      if (v.text.match(/^Application/) != null) {
+        hasApplication = true;
+      }
+    });
+
+    return (hasTranscript && hasPersonalStatement && hasResume
+            && hasApplication);    
+  }
+
+  display(val) : HTMLElement {
+    if (val[this.label_] === null) {
+      return F.DIVSty({ className: 'set' }, []);
+    }
     var materialsCap = this.materialsCap_;
     function dispLink(v) {
       return F.DIV(F.A({ target: '_blank', href: materialsCap + "?" + v.url }, 
@@ -410,8 +446,9 @@ export class SetCol extends TextCol {
       return typeof link.url === 'string';
     }
 
-    return F.DIVSty({ className: 'set' }, 
-      val[this.label_].filter(isValidLink).map(dispLink));
+    var setElements = val[this.label_].filter(isValidLink).map(dispLink);
+    var className = this.isComplete(val) ? 'set complete' : 'set';
+    return F.DIVSty({ className: className  }, setElements);
   }
 
   makeFilter() {
@@ -419,9 +456,16 @@ export class SetCol extends TextCol {
   }
 
   compare(o1, o2) {
-    var v1 = o1[this.label_];
-    var v2 = o2[this.label_];
-    return v1.length - v2.length;
+    var o1Complete = this.isComplete(o1) ? 1 : 0;
+    var o2Complete = this.isComplete(o2) ? 1 : 0;
+    if (o1Complete === 1 &&  o2Complete === 1) {
+      var v1 = o1[this.label_];
+      var v2 = o2[this.label_];
+      return v1.length - v2.length;
+    }
+    else {
+      return o1Complete - o2Complete;
+    }
   }
 }
 
