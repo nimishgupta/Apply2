@@ -129,6 +129,8 @@ function highlightSelectedRow(newRow, oldRow) {
   return newRow;
 }
 
+var numVisible = 0;
+
 /**
  * @param {Application} obj
  * @param {Array.<Cols.TextCol>} fields
@@ -148,7 +150,9 @@ function displayRow(obj, fields, filter) {
     [field.display(obj)]);
   }
   var dispWhen = disp('table-row', filter.liftB(function(pred) {
-    return pred(obj);
+    var b = pred(obj);
+    if (b) { numVisible = numVisible + 1; }
+    return b;
   }));
   return F.DIVSty({ className: 'row',
                'data-appId': obj.personId,
@@ -161,11 +165,17 @@ function displayRow(obj, fields, filter) {
  * @param {Array.<Cols.TextCol>} fields
  * @param {F.Behavior} filter
  */
-function displayTable(objs, fields, filter, compare) {
+function displayTable(objs, fields, filter_, compare) {
+  var filter = filter_.liftB(function(f) {
+    numVisible = 0;
+    window.setTimeout(function(_) {
+    document.getElementById("itemCount").innerHTML =  "Showing " + numVisible + " applicants.";
+    }, 100);
+    return f;
+  });
   var rows = F.liftB(function(objsV, compareV) {
     return objsV.sort(compareV)
-                .map(function(o) { 
-                  return displayRow(o, fields, filter); });
+                .map(function(o) { return displayRow(o, fields, filter); });
   }, objs, compare);
   var rowGroup = F.DIVSty({ style: { display: 'table-row-group' } }, rows);
   selectedRow(rowGroup).collectE(null, highlightSelectedRow);
