@@ -168,7 +168,7 @@ function genericMakeFilter(defaultSubFilter, isAnd, inits) {
   return {
     fn: filter,
     elt: F.DIVSty({ className: 'filterPanel' }, 
-             [F.DIV(
+             [F.DIV(F.TEXT(isAnd ? "and" : "or"),
               F.DIVSty({ className: 'lbracket' }, [elt]))]),
     disabled: disabled,
     ser: ser
