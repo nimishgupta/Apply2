@@ -129,8 +129,6 @@ function highlightSelectedRow(newRow, oldRow) {
   return newRow;
 }
 
-var numVisible = 0;
-
 /**
  * @param {Application} obj
  * @param {Array.<Cols.TextCol>} fields
@@ -138,7 +136,7 @@ var numVisible = 0;
  *
  * @return {Node}
  */
-function displayRow(obj, fields, filter) {
+function displayRow(obj, fields, filter, counter) {
   /**
    * @param {Cols.TextCol} field
    */
@@ -151,7 +149,7 @@ function displayRow(obj, fields, filter) {
   }
   var dispWhen = disp('table-row', filter.liftB(function(pred) {
     var b = pred(obj);
-    if (b) { numVisible = numVisible + 1; }
+    if (b) { counter.count = counter.count + 1; }
     return b;
   }));
   return F.DIVSty({ className: 'row',
@@ -166,16 +164,24 @@ function displayRow(obj, fields, filter) {
  * @param {F.Behavior} filter
  */
 function displayTable(objs, fields, filter_, compare) {
+  // Working around FRP.
+  var counter = { count: 0 };
+
   var filter = filter_.liftB(function(f) {
-    numVisible = 0;
+    counter.count = 0;
     window.setTimeout(function(_) {
-    document.getElementById("itemCount").innerHTML =  "Showing " + numVisible + " applicants.";
+    document.getElementById("itemCount").innerHTML = 
+      "Showing " + counter.count + " applicants.";
     }, 100);
     return f;
   });
+
   var rows = F.liftB(function(objsV, compareV) {
-    return objsV.sort(compareV)
-                .map(function(o) { return displayRow(o, fields, filter); });
+    counter = { count: 0 };
+    var rows = objsV.sort(compareV)
+                .map(function(o) { 
+                       return displayRow(o, fields, filter, counter); });
+    return rows;
   }, objs, compare);
   var rowGroup = F.DIVSty({ style: { display: 'table-row-group' } }, rows);
   selectedRow(rowGroup).collectE(null, highlightSelectedRow);
