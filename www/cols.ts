@@ -15,6 +15,7 @@ export class TextFilter implements Filter.Filter {
         if (search === '') { 
           return true;
         }
+        if (obj[label] === undefined) { return false; }
         return obj[label].toLowerCase().indexOf(search.toLowerCase()) !== -1;
       };
       });
