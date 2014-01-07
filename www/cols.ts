@@ -72,7 +72,7 @@ export class SetFilter implements Filter.Filter {
     var sel = F.$B(select);
     var fn = sel.liftB(function(selection) {
       return function(obj) { 
-        return obj[label] !== null && obj[label].indexOf(selection) !== -1;
+        return (obj[label] instanceof Array) && obj[label].indexOf(selection) !== -1;
       };     
       });
     var elt = F.DIV(F.TEXT(friendly), select);
@@ -331,7 +331,7 @@ export class SetCol extends TextCol {
 
   display (val) {
     var this_ = this;
-    if (val[this.label_] === null) {
+    if (val[this.label_] === null || typeof val[this.label_] === 'undefined') {
       return F.DIVSty({ className: 'set' }, []);
     }
 
@@ -408,7 +408,7 @@ export class SetCol extends TextCol {
   }
 
   isComplete(val) {
-    if (val[this.label_] === null) {
+    if (typeof val[this.label_] !== 'object') {
       return false;
     }
     var hasTranscript = false;
@@ -437,7 +437,7 @@ export class SetCol extends TextCol {
   }
 
   display(val) : HTMLElement {
-    if (val[this.label_] === null) {
+    if (val[this.label_] !== 'object') {
       return F.DIVSty({ className: 'set' }, []);
     }
     var materialsCap = this.materialsCap_;

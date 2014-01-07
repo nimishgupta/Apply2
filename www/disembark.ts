@@ -278,7 +278,12 @@ function ratingPane(label, init, setScoreCap) {
    .POST(setScoreCap)
    .mapE(function() { update.sendEvent(true); });
   var elt = F.DIVClass('vbox', 
-              F.DIVSty({ style: { textAlign: 'center' } }, [F.TEXT('Score')]),
+              F.DIVSty({ style: { textAlign: 'center' } }, 
+                       [F.TEXT('Score (0--10)')]),
+              F.DIVSty({ style: { textAlign: 'center' } }, 
+                       [F.TEXT('8 or higher means ADMIT')]),
+              F.DIVSty({ style: { textAlign: 'center' } }, 
+                       [F.TEXT('3 or lower means REJECT')]),
               F.DIV(input));
   return elt;
 }
@@ -329,7 +334,7 @@ function dispCommentPane(loginData, reviewers, data, fields, comments) {
     return {
       info: infoPane(fields, dataById[arg.appId]),
       highlights: highlights,
-      rating: F.DIVSty({ className: 'hbox boxAlignCenter' },
+      rating: F.DIVSty({ className: 'vbox boxAlignCenter' },
                     [selfStarPane(loginData, arg.highlightCap, 
                     arg.unhighlightCap, arg.highlightedBy), ratings]),
       commentDisp: commentDisp,
