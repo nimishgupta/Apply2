@@ -307,7 +307,7 @@ function infoPane(fields, val) {
 function dispCommentPane(loginData, reviewers, data, fields, comments) {
   var dataById = dataMap(data);
   function fn(arg) {
-    var post = F.INPUT({ className: 'fill', type: 'button', value: 'Send' });
+    var post = F.INPUT({ className: 'fill', type: 'button', value: 'Post' });
     var commentDisp = F.DIVSty({ className: 'table' },
       [arg.comments.map(dispComment)]);
     var newPosts = F.clicksE(post).mapE(function(){

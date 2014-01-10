@@ -408,7 +408,7 @@ export class SetCol extends TextCol {
   }
 
   isComplete(val) {
-    if (typeof val[this.label_] !== 'object') {
+    if (!(val[this.label_] instanceof Array)) {
       return false;
     }
     var hasTranscript = false;
@@ -437,7 +437,7 @@ export class SetCol extends TextCol {
   }
 
   display(val) : HTMLElement {
-    if (val[this.label_] !== 'object') {
+    if (!(val[this.label_] instanceof Array)) {
       return F.DIVSty({ className: 'set' }, []);
     }
     var materialsCap = this.materialsCap_;

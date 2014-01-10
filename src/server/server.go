@@ -52,15 +52,6 @@ func materialHandler(key string, w http.ResponseWriter, r *http.Request) {
 		panic("expected GET")
 	}
 
-	cookie, err := r.Cookie("materialsCap")
-	if err != nil || cookie.Value != r.URL.Path {
-		log.Printf("%v SECURITY ERROR %v trying to use materials capability %v",
-			r.RemoteAddr, key, r.URL.Path)
-		w.WriteHeader(http.StatusBadRequest)
-		r.Close = true
-		return
-	}
-
 	untrustedDocName, err := url.QueryUnescape(r.URL.RawQuery)
 	if err != nil {
 		panic(err)
@@ -242,10 +233,6 @@ func loginHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	matsCap := capServer.Grant(materialKey, cred.Username)
-
-	// Checked by materialHandler. Capability security is sufficient, but this
-	// helps if URLs leak.
-	w.Header().Add("Set-Cookie", fmt.Sprintf("materialsCap=%v", matsCap))
 
 	err = util.JSONResponse(w, map[string]interface{}{
 		"revId":             cred.Username,
