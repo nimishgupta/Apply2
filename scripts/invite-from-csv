@@ -1,0 +1,8 @@
+#!/bin/bash
+
+while read line; do
+  name=`echo $line | cut -f 1 -d , | `
+  email=`echo $line | cut -f 2   -d , | sed 's/@cs.umass.edu//'`
+  CMD="./apply2 newreviewer $email \"\"  \"$name\""
+  echo $CMD
+done < $1
