@@ -6,7 +6,7 @@
 - [TypeScript] to build the client-side code (tested with version 0.9.0.1)
 - [Mercurial] to fetch Go dependencies
 - [Go] to build the server-side code (tested with version 1.0.3)
-- [CouchDB] to run the database server (tested with version 1.3.1)
+- [CouchDB] to run the database server (tested with version 1.4.0)
 - [Nginx] to run the Web server (only required for deployment; tested with version 1.4.1)
 
 ## MacOS X + Homebrew Development Instructions
