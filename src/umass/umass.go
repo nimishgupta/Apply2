@@ -129,7 +129,7 @@ func isHeaderOK(header []string) bool {
 	return true
 }
 
-func ImportCSV(csvFile string) {
+func ImportCSV(dbhost, dbport, csvFile string) {
 	f, err := os.Open(csvFile)
 	if err != nil {
 		log.Fatalf("Could not open %v\n%v\n", csvFile, err)
@@ -148,11 +148,11 @@ func ImportCSV(csvFile string) {
 	}
 
 	if isHeaderOK(lines[0]) == false {
-  	log.Fatalf("Unexpected header row in %v", csvFile)
-  	os.Exit(1)
-  }
+		log.Fatalf("Unexpected header row in %v", csvFile)
+		os.Exit(1)
+  	}
 
-	dept, err := model.LoadDept("localhost", "5984")
+	dept, err := model.LoadDept(dbhost, dbport)
 	if err != nil {
 		log.Fatalf("Could not load department.\n%v\n", err)
 		os.Exit(1)

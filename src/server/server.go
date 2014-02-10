@@ -285,9 +285,9 @@ func setScoreHandler(key string, w http.ResponseWriter, r *http.Request) {
 	return
 }
 
-func Serve(key []byte, isTesting bool) {
+func Serve(dbhost string, dbport string, key []byte, isTesting bool) {
 
-	_dept, err := model.LoadDept("localhost", "5984")
+	_dept, err := model.LoadDept(dbhost, dbport)
 	if err != nil {
 		panic(err)
 	}

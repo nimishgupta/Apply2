@@ -3,13 +3,21 @@ package main
 import (
 	"crypto/rand"
 	"encoding/json"
+	"flag"
 	"fmt"
 	"io/ioutil"
 	"model"
-	"os"
+	/* "os" */
 	"server"
 	"umass"
 )
+
+type DBConn struct {
+  Host string
+  Port string
+}
+
+var dbconn DBConn
 
 func rand16() []byte {
 	key := [16]byte{}
@@ -31,7 +39,7 @@ func keygen(file string) {
 }
 
 func deleteDept() {
-	dept, err := model.LoadDept("localhost", "5984")
+	dept, err := model.LoadDept(dbconn.Host, dbconn.Port)
 	if err != nil {
 		panic(fmt.Sprintf("department does not exist %v", err))
 	}
@@ -53,7 +61,7 @@ var cmdUMassImport = &Command {
 			return
 		}
 		file := args[0]
-		umass.ImportCSV(file)
+		umass.ImportCSV(dbconn.Host, dbconn.Port, file)
 	},
 	Short: "import CSV data from UMass",
 	Usage: "FILENAME.CSV",
@@ -96,7 +104,7 @@ var cmdDeleteDept = &Command {
 
 var cmdNewDept = &Command {
 	Run: func(args []string) {
-		_, err := model.NewDept("localhost", "5984")
+		_, err := model.NewDept(dbconn.Host, dbconn.Port)
 		if err != nil {
 			panic(err)
 		}
@@ -108,7 +116,7 @@ var cmdNewReviewer = &Command {
 	Short: "create a new reviewer account",
 	Usage: `USERNAME PASSWORD "Full Name"`,
 	Run: func(args []string) {
-		dept, err := model.LoadDept("localhost", "5984")
+		dept, err := model.LoadDept(dbconn.Host, dbconn.Port)
 		if err != nil {
 			panic(err)
 		}
@@ -132,7 +140,7 @@ var cmdLoadApps = &Command {
 		if err != nil {
 			panic(err)
 		}
-		dept, err := model.LoadDept("localhost", "5984")
+		dept, err := model.LoadDept(dbconn.Host, dbconn.Port)
 		if err != nil {
 			panic(err)
 		}
@@ -151,11 +159,11 @@ var cmdFastCGI = &Command {
 	Run: func(args []string) {
 		if len(args) == 0 {
 			fmt.Printf("Generated random key. Any running sessions will fail.\n")
-			server.Serve(rand16(), false)
+			server.Serve(dbconn.Host, dbconn.Port, rand16(), false)
 		} else if len(args) == 1 {
 			key, err := ioutil.ReadFile(args[0])
 			if err != nil { panic (err) }
-			server.Serve(key , false)
+			server.Serve(dbconn.Host, dbconn.Port, key , false)
 		}	else {
 			fmt.Print("Invalid arguments. Run 'apply2 help'.\n")
 		}
@@ -168,11 +176,11 @@ var cmdTestServer = &Command {
 	Run: func(args []string) {
 		if len(args) == 0 {
 			fmt.Printf("Generated random key. Any running sessions will fail.\n")
-			server.Serve(rand16(), true)
+			server.Serve(dbconn.Host, dbconn.Port, rand16(), true)
 		} else if len(args) == 1 {
 			key, err := ioutil.ReadFile(args[0])
 			if err != nil { panic (err) }
-			server.Serve(key , true)
+			server.Serve(dbconn.Host, dbconn.Port, key , true)
 		}	else {
 			fmt.Print("Invalid arguments. Run 'apply2 help'.\n")
 		}
@@ -221,22 +229,31 @@ var commands = map[string]*Command{
 
 func main() {
 
-	if len(os.Args) < 2 {
+	flag.StringVar(&dbconn.Host, "dbhost", "localhost", "dbhost <ip/name>")
+	flag.StringVar(&dbconn.Port, "dbport", "5984", "dbport <port>")
+
+	flag.Parse ()
+
+        var args []string = flag.Args ()
+
+        // var args []string = os.Args
+
+	if len(args) < 1 {
 		fmt.Printf("Expected command. run 'apply2 help' for usage information.\n")
 		return
 	}
 
 	// Compiler reports an "initialization loop" if help is placed in commands...
-	if os.Args[1] == "help" {
-		runCmdHelp(os.Args[2:])
+	if args[0] == "help" {
+		runCmdHelp(args[1:])
 		return
 	}
 
-	cmd, ok := commands[os.Args[1]]
+	cmd, ok := commands[args[0]]
 	if !ok {
 		fmt.Printf("Command not found. Run 'apply2 help' for usage information.\n")
 		return
 	}
 
-	cmd.Run(os.Args[2:])
+	cmd.Run(args[1:])
 }
